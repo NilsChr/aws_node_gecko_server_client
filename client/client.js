@@ -25,7 +25,7 @@ let sketch = function (p) {
     p.createCanvas(700, 410);
     p.noSmooth();
 
-    let channel = geckos({ port: 1444 });
+    let channel = geckos({ port: 3000 });
     gameState.channel = channel;
 
     channel.onConnect((error) => {
