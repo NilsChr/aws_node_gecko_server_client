@@ -18,7 +18,7 @@ const server = http.createServer(app)
 //const game = new PhaserGame(server)
 const game = new Game(server);
 game.start();
-const port = 1444;
+const port = 3000;
 
 app.use(cors())
 
