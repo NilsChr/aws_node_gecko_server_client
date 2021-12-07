@@ -6,6 +6,9 @@ const GAME_OBJECT_RENDERER = {
     switch (obj.type) {
       case GAME_UNIT_TYPES.PLAYER:
         p.image(ASSET_MANAGER.getAsset("units"), obj.x, obj.y, 64, 32, 32, 0);
+        p.stroke(255,0,0);
+        p.noFill();
+        p.ellipse(obj.x+16, obj.y+16, 300,300);
         break;
       case GAME_UNIT_TYPES.SKELETON_1:
         p.image(ASSET_MANAGER.getAsset("units"), obj.x, obj.y, 32, 32, 0, 0, 32,32);

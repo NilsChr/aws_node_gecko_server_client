@@ -8,7 +8,7 @@ import INPUT from "./input.js";
 import ASSET_MANAGER from "./managers/assetManager.js";
 import GAME_OBJECT_RENDERER from "./systems/gameObjectRenderer.js";
 import GAME_UNIT_TYPES from "./factories/gameUnitTypes.js";
-const SI = new SnapshotInterpolation(15);
+const SI = new SnapshotInterpolation(30);
 
 let sketch = function (p) {
   let x = 100;
@@ -18,7 +18,7 @@ let sketch = function (p) {
 
   p.preload = function () {
     img = p.loadImage("assets/rpg_units.png");
-    ASSET_MANAGER.loadAsset(p, "units", "./assets/rpg_units2.png");
+    ASSET_MANAGER.loadAsset(p, "units", "./assets/rpg_units3.png");
   };
 
   p.setup = function () {
@@ -56,7 +56,9 @@ let sketch = function (p) {
     });
   };
 
+  let frameCount = 0;
   p.draw = function () {
+    frameCount++;
     p.background(0);
 
     p.fill(255);
@@ -84,6 +86,10 @@ let sketch = function (p) {
         //player.sx = x;
         //player.sy = y;
         gameState.clientPlayer.checkInput();
+       // if(frameCount % 10 == 0) {
+          obj.x = x;
+          obj.y = y;
+        //}
       } else {
         obj.x = x;
         obj.y = y;

@@ -13,6 +13,8 @@ export default class ServerEnemy {
     this.id = id;
     this.x = x;
     this.y = y;
+    this.px = x;
+    this.py = y;
     this.type = type;
     this.moveSpeed = 1;
     this.state = STATES.FIND_TARGET;
@@ -31,17 +33,24 @@ export default class ServerEnemy {
     switch (this.state) {
       case STATES.FIND_TARGET:
         this.findTarget(gameObjects);
-        return;
+        break;
       case STATES.MOVE_TOWARDS_TARGET:
         this.moveTowardsTarget();
-        return;
+        break;
       case STATES.MOVE_HOME:
         this.moveHome();
-        return;
+        break;
       case STATES.ATTACK:
         this.attack();
-        return;
+        break;
     }
+
+    this.px = this.x;
+    this.py = this.y;
+  }
+
+  hasChanged() {
+    return this.px != this.x || this.py != this.y;
   }
 
   findTarget(gameObjects) {

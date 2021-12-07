@@ -49,9 +49,11 @@ export class Game {
         20,
         GAME_UNIT_TYPES.PLAYER
       );
+
       this.gameobjects.push(newPlayer);
       this.players[channel.id] = newPlayer;
       this.SIVaults[channel.id] = new SnapshotInterpolation();
+
       channel.room.emit("playerJoined", this.gameobjects);
 
       registerEvents(channel, this);
@@ -60,7 +62,12 @@ export class Game {
         console.log("Disconnect user " + channel.id);
         this.removeGameObject(channel.id);
         channel.room.emit("removePlayer", channel.playerId);
-        this.channels.splice(this.channels.indexOf(channel), 1);
+        this.channels.splice(this.channels.indexOf(channel.id), 1);
+        this.SIVaults.splice(this.SIVaults.indexOf(channel.id), 1);
+        console.log(this.gameobjects.length);
+        console.log(this.channels);
+        console.log(this.SIVaults);
+
       });
 
       channel.emit("ready");
@@ -73,7 +80,7 @@ export class Game {
       function () {
         this.update();
       }.bind(this),
-      1000 / 30
+      1000 / 24
     );
   }
 
@@ -84,23 +91,26 @@ export class Game {
   update() {
 
     // Run Enemies Logic
-    this.gameobjects.filter(g => g.type !== GAME_UNIT_TYPES.PLAYER).forEach(o => {
+    /*this.gameobjects.filter(g => g.type !== GAME_UNIT_TYPES.PLAYER).forEach(o => {
         o.update(this.gameobjects);
+    })*/
+    this.gameobjects.forEach(o => {
+      o.update(this.gameobjects);
     })
 
-    // Only send state of things within range
+    // Only send state of things within rang
+    //let updatedGameObjects = this.gameobjects.filter(p => p.hasChanged());
+    
     for(let i = this.channels.length; i >= 0; i--) {
       let channel = this.channels[i];
       if(!channel) continue;
       let player = this.players[channel.id];
-     /* let player = this.players[channel.id];
-      let gameObjectsWithinRange = this.gameobjects.filter(p => MathHelpers.getDistance(player.x, player.y, p.x, p.y) < 40);
+      let gameObjectsWithinRange = this.gameobjects.filter(p => MathHelpers.getDistance(player.x, player.y, p.x, p.y) < 150);
       const snapshot = this.SIVaults[channel.id].snapshot.create(gameObjectsWithinRange.map(p => p.parseForTransfer()));
       //SI.vault.add(snapshot);
       this.SIVaults[channel.id].vault.add(snapshot);
-      this.io.emit("update", snapshot);
-      */
-
+      //this.io.emit("update", snapshot);
+      channel.emit("update", snapshot);
     }
 
     /* Send whole state to all user

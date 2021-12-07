@@ -20,13 +20,13 @@ const UNIT_FACTORY = {
       case GAME_UNIT_TYPES.PLAYER:
         gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.PLAYER);
         break;
-        case GAME_UNIT_TYPES.SKELETON_1:
-            gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.SKELETON_1);
-            break;
+      case GAME_UNIT_TYPES.SKELETON_1:
+        gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.SKELETON_1);
+        break;
     }
-    if(!gameState) {
-        console.warn("ENEMY TYPE NOT MAPPED IN FACTORY");
-        return;
+    if (!gameState) {
+      console.warn("ENEMY TYPE NOT MAPPED IN FACTORY");
+      return;
     }
     gameState.gameobjects.push(gameObject);
   },

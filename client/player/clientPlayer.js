@@ -14,7 +14,7 @@ export class ClientPlayer {
     if (INPUT.input.MOVE_RIGHT) dx++;
     if (INPUT.input.MOVE_DOWN) dy++;
     if (INPUT.input.MOVE_UP) dy--;
-    this.move(dx, dy);
+    //this.move(dx, dy);
     if (
       INPUT.input.MOVE_LEFT ||
       INPUT.input.MOVE_RIGHT ||
@@ -25,6 +25,7 @@ export class ClientPlayer {
     }
   }
 
+  // Moving player on client directly makes input feel instant
   move(x, y) {
     gameState.clientPlayerGameObject.x += x;
     gameState.clientPlayerGameObject.y += y;
