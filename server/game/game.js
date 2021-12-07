@@ -6,7 +6,9 @@ import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
 import ServerEnemy from "./serverEnemy.js";
 import ServerPlayer from "./serverPlayer.js";
 import registerEvents from "./transportEvents/index.js";
-import MathHelpers from "./util/MathHelpers.js";
+//import MathHelpers from "./util/MathHelpers.js";
+import MathHelpers from "../../common/MathHelpers.js";
+
 const SI = new SnapshotInterpolation();
 
 export class Game {
