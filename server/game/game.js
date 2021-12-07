@@ -1,16 +1,21 @@
 import geckos from "@geckos.io/server";
 import { iceServers } from "@geckos.io/server";
 
-import { SnapshotInterpolation } from "@geckos.io/snapshot-interpolation";
+import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
 import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
 import ServerEnemy from "./serverEnemy.js";
 import ServerPlayer from "./serverPlayer.js";
+import registerEvents from "./transportEvents/index.js";
+import MathHelpers from "./util/MathHelpers.js";
 const SI = new SnapshotInterpolation();
 
 export class Game {
   running = false;
   loop = null;
   gameobjects = [];
+  players = [];
+  channels = [];
+  SIVaults = [];
 
   constructor(server) {
     this.io = server;
@@ -35,9 +40,9 @@ export class Game {
       iceServers: process.env.NODE_ENV === "production" ? iceServers : [],
     });
     this.io.addServer(server);
-    let that = this;
 
     this.io.onConnection((channel) => {
+      this.channels.push(channel);
       let newPlayer = new ServerPlayer(
         channel.id,
         20,
@@ -45,27 +50,18 @@ export class Game {
         GAME_UNIT_TYPES.PLAYER
       );
       this.gameobjects.push(newPlayer);
+      this.players[channel.id] = newPlayer;
+      this.SIVaults[channel.id] = new SnapshotInterpolation();
       channel.room.emit("playerJoined", this.gameobjects);
+
+      registerEvents(channel, this);
 
       channel.onDisconnect(() => {
         console.log("Disconnect user " + channel.id);
-
+        this.removeGameObject(channel.id);
         channel.room.emit("removePlayer", channel.playerId);
+        this.channels.splice(this.channels.indexOf(channel), 1);
       });
-
-      channel.on("client:playerInput", (data) => {
-        playerInput(channel.id, data);
-      });
-
-      function playerInput(id, input) {
-        let player = that.gameobjects.find((p) => p.id == id);
-        if (!player) return;
-
-        if (input[0]) player.x--;
-        if (input[1]) player.x++;
-        if (input[2]) player.y++;
-        if (input[3]) player.y--;
-      }
 
       channel.emit("ready");
     });
@@ -81,18 +77,43 @@ export class Game {
     );
   }
 
+  removeGameObject(id) {
+    this.gameobjects.splice(this.gameobjects.findIndex(p => p.id == id), 1);
+  }
+
   update() {
 
+    // Run Enemies Logic
     this.gameobjects.filter(g => g.type !== GAME_UNIT_TYPES.PLAYER).forEach(o => {
         o.update(this.gameobjects);
     })
 
-    const snapshot = SI.snapshot.create(this.gameobjects);
+    // Only send state of things within range
+    for(let i = this.channels.length; i >= 0; i--) {
+      let channel = this.channels[i];
+      if(!channel) continue;
+      let player = this.players[channel.id];
+     /* let player = this.players[channel.id];
+      let gameObjectsWithinRange = this.gameobjects.filter(p => MathHelpers.getDistance(player.x, player.y, p.x, p.y) < 40);
+      const snapshot = this.SIVaults[channel.id].snapshot.create(gameObjectsWithinRange.map(p => p.parseForTransfer()));
+      //SI.vault.add(snapshot);
+      this.SIVaults[channel.id].vault.add(snapshot);
+      this.io.emit("update", snapshot);
+      */
+
+    }
+
+    /* Send whole state to all user
+
+    const snapshot = SI.snapshot.create(this.gameobjects.map(p => p.parseForTransfer()));
+    //const snapshot = SI.snapshot.create(this.gameobjects);
 
     // add the snapshot to the vault in case you want to access it later (optional)
     SI.vault.add(snapshot);
 
     // send the snapshot to the client (using geckos.io or any other library)
     this.io.emit("update", snapshot);
+
+    */
   }
 }

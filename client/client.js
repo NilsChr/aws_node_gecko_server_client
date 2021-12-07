@@ -33,6 +33,7 @@ let sketch = function (p) {
 
       if (error) console.error(error.message);
       channel.on("update", (snapshot) => {
+        console.log(snapshot.state.length);
         SI.snapshot.add(snapshot);
       });
       channel.on("ready", () => {

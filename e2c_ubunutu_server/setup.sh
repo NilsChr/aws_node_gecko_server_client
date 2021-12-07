@@ -8,8 +8,8 @@
 # TCP	    3000	        0.0.0.0/0
 
 # Remove previous pm2
-sudo pm2 kill
-sudo npm remove pm2 -g
+# sudo pm2 kill
+# sudo npm remove pm2 -g
 
 # tested on ubuntu 20.04 / t3a.nano
 

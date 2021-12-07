@@ -1,5 +1,7 @@
 import express from 'express'
 import http from 'http'
+import https from 'https'
+
 import cors from 'cors'
 import path from 'path'
 //import { PhaserGame } from './game/game.js'
@@ -13,7 +15,7 @@ const __dirname = dirname(__filename)
 
 const app = express()
 const server = http.createServer(app)
-
+//const server = https.createServer(app)
 
 //const game = new PhaserGame(server)
 const game = new Game(server);
