@@ -1,23 +1,18 @@
 import express from 'express'
 import http from 'http'
 import https from 'https'
-
 import cors from 'cors'
 import path from 'path'
-//import { PhaserGame } from './game/game.js'
 import { Game } from './game/game.js'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
-
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const app = express()
 const server = http.createServer(app)
-//const server = https.createServer(app)
 
-//const game = new PhaserGame(server)
 const game = new Game(server);
 game.start();
 const port = 3000;
@@ -32,8 +27,6 @@ app.get('/', (req, res) => {
 
 app.get('/getState', (req, res) => {
   try {
-    //let gameScene = game.scene.keys['GameScene']
-    //return res.json({ state: gameScene.getState() })
     return res.json({ error: 'nothing here yet' })
   } catch (error) {
     return res.status(500).json({ error: error.message })

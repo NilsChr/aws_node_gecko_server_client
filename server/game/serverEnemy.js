@@ -1,5 +1,8 @@
 import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
+import EVENTS_UDP from "../../common/eventsUDP.js";
+import GameObject from "../../common/gameObject.js";
 import MATH_HELPERS from "../../common/MathHelpers.js";
+import DAMAGE_SYSTEM from "./systems/damage.system.js";
 
 const STATES = {
   FIND_TARGET: 1,
@@ -8,25 +11,13 @@ const STATES = {
   ATTACK: 4,
 };
 
-export default class ServerEnemy {
-  constructor(id, x, y, type) {
-    this.id = id;
-    this.x = x;
-    this.y = y;
-    this.px = x;
-    this.py = y;
-    this.type = type;
-    this.moveSpeed = 1;
+export default class ServerEnemy extends GameObject {
+  constructor(game, id, x, y, type) {
+    super(id, x, y, type);
+    this.game = game;
     this.state = STATES.FIND_TARGET;
-
-    this.start = {
-      x: this.x,
-      y: this.y,
-    };
-
+    this.start = this.pos.copy();
     this.target = null;
-    this.aggroRange = 50;
-    this.attackRange = 5;
   }
 
   update(gameObjects) {
@@ -44,20 +35,13 @@ export default class ServerEnemy {
         this.attack();
         break;
     }
-
-    this.px = this.x;
-    this.py = this.y;
-  }
-
-  hasChanged() {
-    return this.px != this.x || this.py != this.y;
   }
 
   findTarget(gameObjects) {
     this.target = gameObjects.filter(
       (p) =>
         p.type === GAME_UNIT_TYPES.PLAYER &&
-        MATH_HELPERS.getDistance(p.x, p.y, this.x, this.y) < this.aggroRange
+        MATH_HELPERS.getDistanceVec2(p.pos, this.pos) < this.stats.aggroRange
     )[0];
 
     if (this.target) {
@@ -68,18 +52,18 @@ export default class ServerEnemy {
   moveTowardsTarget() {
     // Too far from home
     if (
-      MATH_HELPERS.getDistance(this.start.x, this.start.y, this.x, this.y) >
-      this.aggroRange * 3
+      MATH_HELPERS.getDistanceVec2(this.start, this.pos) >
+      this.stats.aggroRange * 3
     ) {
       this.target = null;
       this.state = STATES.MOVE_HOME;
       return;
     }
 
-    // Too far from player
+    // Too far from player : Player has ran away from enemy
     if (
-      MATH_HELPERS.getDistance(this.target.x, this.target.y, this.x, this.y) >
-      this.aggroRange * 3
+      MATH_HELPERS.getDistanceVec2(this.target.pos, this.pos) >
+      this.stats.aggroRange * 3
     ) {
       this.target = null;
       this.state = STATES.MOVE_HOME;
@@ -87,49 +71,82 @@ export default class ServerEnemy {
     }
 
     // Move towards player
-    var angleRadians = Math.atan2(
-      this.y - this.target.y,
-      this.x - this.target.x
-    );
-
-    this.x -= Math.cos(angleRadians) * this.moveSpeed;
-    this.y -= Math.sin(angleRadians) * this.moveSpeed;
+    var angleRadians = MATH_HELPERS.getAngleRadians(this.pos, this.target.pos);
+    this.vel.x -= Math.cos(angleRadians);
+    this.vel.y -= Math.sin(angleRadians);
 
     if (
-      MATH_HELPERS.getDistance(this.target.x, this.target.y, this.x, this.y) <
-      this.attackRange
+      MATH_HELPERS.getDistanceVec2(this.target.pos, this.pos) <
+      this.stats.attackRange
     ) {
-        this.state = STATES.ATTACK;
-        return;
+      this.state = STATES.ATTACK;
+      return;
     }
   }
 
   moveHome() {
-    var angleRadians = Math.atan2(this.y - this.start.y, this.x - this.start.x);
+    var angleRadians = MATH_HELPERS.getAngleRadians(this.pos, this.start);
 
-    this.x -= Math.cos(angleRadians) * this.moveSpeed;
-    this.y -= Math.sin(angleRadians) * this.moveSpeed;
+    this.vel.x -= Math.cos(angleRadians);
+    this.vel.y -= Math.sin(angleRadians);
 
-    if (
-      MATH_HELPERS.getDistance(this.start.x, this.start.y, this.x, this.y) < 0.5
-    ) {
-      this.x = this.start.x;
-      this.y = this.start.y;
+    if (MATH_HELPERS.getDistanceVec2(this.start, this.pos) < 0.5) {
+      this.pos.x = this.start.x;
+      this.pos.y = this.start.y;
       this.state = STATES.FIND_TARGET;
       return;
     }
   }
 
   attack() {
-    //console.log("ATTACK");
+    if (this.target.dead) {
+      this.state = STATES.MOVE_HOME;
+      this.target = null;
+      return;
+    }
+    if (
+      MATH_HELPERS.getDistanceVec2(this.target.pos, this.pos) >
+      this.stats.attackRange
+    ) {
+      this.state = STATES.MOVE_TOWARDS_TARGET;
+      return;
+    }
+
+    this.useSkill();
   }
 
-  parseForTransfer() {
-    return {
-      id: this.id,
-      x: this.x,
-      y: this.y,
-      type: this.type,
-    };
+  useSkill(skill_no) {
+    let now = performance.now();
+    let diff = now - this.lastAttack;
+
+    if (diff > this.stats.attackSpeed) {
+      //console.log("ATTACK", this.stats.attackSpeed);
+      this.lastAttack = now;
+      let enemies = this.game.gameobjects
+        .filter((g) => g.type == GAME_UNIT_TYPES.PLAYER)
+        .filter(
+          (g) =>
+            MATH_HELPERS.getDistanceVec2(g.pos, this.pos) <
+            this.stats.attackRange
+        );
+      // console.log("HIT ", enemies);
+      enemies.forEach((e) => {
+        let hit = DAMAGE_SYSTEM(this, e);
+        e.channel.emit(
+          EVENTS_UDP.fromServer.unitUseSkill,
+          { attackerId: this.id, skillId: 0 },
+          {
+            reliable: true,
+          }
+        );
+      });
+
+      /*
+      this.channel.emit(EVENTS_UDP.fromServer.playerUseSkill, skill_no, {
+        reliable: true,
+      });
+      */
+      //this.animationState = GO_ANIMATION_STATES.ATTACK_NORMAL;
+    }
   }
 }

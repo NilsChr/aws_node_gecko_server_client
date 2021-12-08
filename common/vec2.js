@@ -13,4 +13,22 @@ export default class vec2 {
         this.x *= scalar;
         this.y *= scalar;
     }
+
+    divide(scalar) {
+        if(scalar == 0) return;
+        this.x /= scalar;
+        this.y /= scalar;
+    };
+
+    magnitude() {
+        return Math.sqrt(this.x* this.x + this.y * this.y);
+    }
+
+    normalise() {
+       this.divide(this.magnitude());
+    }
+
+    copy() {
+        return new vec2(this.x, this.y);
+    }
 }

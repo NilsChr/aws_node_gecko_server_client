@@ -1,15 +1,13 @@
 import geckos from "@geckos.io/server";
 import { iceServers } from "@geckos.io/server";
-
-import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
+import { SnapshotInterpolation } from "@geckos.io/snapshot-interpolation";
 import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
 import ServerEnemy from "./serverEnemy.js";
 import ServerPlayer from "./serverPlayer.js";
 import registerEvents from "./transportEvents/index.js";
-//import MathHelpers from "./util/MathHelpers.js";
 import MathHelpers from "../../common/MathHelpers.js";
-
-const SI = new SnapshotInterpolation();
+import GAME_CONSTANS from "../../common/gameConstants.js";
+import EVENTS_UDP from "../../common/eventsUDP.js";
 
 export class Game {
   running = false;
@@ -23,18 +21,16 @@ export class Game {
     this.io = server;
     this.init(server);
 
-    
-    for(let i = 0; i < 5; i++) {
-        let testSkeleton = new ServerEnemy(i, 100 + (i*15),80+(i*13), GAME_UNIT_TYPES.SKELETON_1);
-        this.gameobjects.push(testSkeleton);
+    for (let i = 0; i < 5; i++) {
+      let testSkeleton = new ServerEnemy(
+        this,
+        i,
+        100 + i * 15,
+        80 + i * 13,
+        GAME_UNIT_TYPES.SKELETON_1
+      );
+      this.gameobjects.push(testSkeleton);
     }
-    /*
-    let testSkeleton = new ServerEnemy(1, 100, 80, GAME_UNIT_TYPES.SKELETON_1);
-    this.gameobjects.push(testSkeleton);
-
-    let testSkeleton2 = new ServerEnemy(5, 140, 80, GAME_UNIT_TYPES.SKELETON_1);
-    this.gameobjects.push(testSkeleton2);
-    */
   }
 
   init(server) {
@@ -46,7 +42,8 @@ export class Game {
     this.io.onConnection((channel) => {
       this.channels.push(channel);
       let newPlayer = new ServerPlayer(
-        channel.id,
+        this,
+        channel,
         20,
         20,
         GAME_UNIT_TYPES.PLAYER
@@ -56,23 +53,27 @@ export class Game {
       this.players[channel.id] = newPlayer;
       this.SIVaults[channel.id] = new SnapshotInterpolation();
 
-      channel.room.emit("playerJoined", this.gameobjects);
+      let withinRange = this.getGameObjectsWithinRange(
+        newPlayer,
+        GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
+      ).map((p) => p.parseForTransfer());
+
+      channel.room.emit(EVENTS_UDP.fromServer.playerJoined, withinRange);
 
       registerEvents(channel, this);
 
       channel.onDisconnect(() => {
         console.log("Disconnect user " + channel.id);
         this.removeGameObject(channel.id);
-        channel.room.emit("removePlayer", channel.playerId);
+        channel.room.emit(EVENTS_UDP.fromServer.removePlayer, channel.playerId);
         this.channels.splice(this.channels.indexOf(channel.id), 1);
         this.SIVaults.splice(this.SIVaults.indexOf(channel.id), 1);
         console.log(this.gameobjects.length);
         console.log(this.channels);
         console.log(this.SIVaults);
-
       });
 
-      channel.emit("ready");
+      channel.emit(EVENTS_UDP.fromServer.ready);
     });
   }
 
@@ -82,50 +83,50 @@ export class Game {
       function () {
         this.update();
       }.bind(this),
-      1000 / 24
+      1000 / GAME_CONSTANS.SERVER_FPS
     );
   }
 
   removeGameObject(id) {
-    this.gameobjects.splice(this.gameobjects.findIndex(p => p.id == id), 1);
+    this.gameobjects.splice(
+      this.gameobjects.findIndex((p) => p.id == id),
+      1
+    );
+  }
+
+  getGameObjectsWithinRange(player, range) {
+    return this.gameobjects.filter(
+      (p) =>
+        MathHelpers.getDistance(player.pos.x, player.pos.y, p.pos.x, p.pos.y) <
+        range
+    );
   }
 
   update() {
+    // Run GameObject Logic
+    this.gameobjects.forEach((o) => {
+      o.tick(this.gameobjects);
+    });
+    this.gameobjects = this.gameobjects.filter((go) => !go.dead);
 
-    // Run Enemies Logic
-    /*this.gameobjects.filter(g => g.type !== GAME_UNIT_TYPES.PLAYER).forEach(o => {
-        o.update(this.gameobjects);
-    })*/
-    this.gameobjects.forEach(o => {
-      o.update(this.gameobjects);
-    })
-
-    // Only send state of things within rang
-    //let updatedGameObjects = this.gameobjects.filter(p => p.hasChanged());
-    
-    for(let i = this.channels.length; i >= 0; i--) {
+    for (let i = this.channels.length; i >= 0; i--) {
       let channel = this.channels[i];
-      if(!channel) continue;
+      if (!channel) continue;
       let player = this.players[channel.id];
-      let gameObjectsWithinRange = this.gameobjects.filter(p => MathHelpers.getDistance(player.x, player.y, p.x, p.y) < 150);
-      const snapshot = this.SIVaults[channel.id].snapshot.create(gameObjectsWithinRange.map(p => p.parseForTransfer()));
-      //SI.vault.add(snapshot);
+      let gameObjectsWithinRange = this.gameobjects.filter(
+        (p) =>
+          MathHelpers.getDistance(
+            player.pos.x,
+            player.pos.y,
+            p.pos.x,
+            p.pos.y
+          ) < GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
+      );
+      const snapshot = this.SIVaults[channel.id].snapshot.create(
+        gameObjectsWithinRange.map((p) => p.parseForTransfer())
+      );
       this.SIVaults[channel.id].vault.add(snapshot);
-      //this.io.emit("update", snapshot);
-      channel.emit("update", snapshot);
+      channel.emit(EVENTS_UDP.fromServer.update, snapshot);
     }
-
-    /* Send whole state to all user
-
-    const snapshot = SI.snapshot.create(this.gameobjects.map(p => p.parseForTransfer()));
-    //const snapshot = SI.snapshot.create(this.gameobjects);
-
-    // add the snapshot to the vault in case you want to access it later (optional)
-    SI.vault.add(snapshot);
-
-    // send the snapshot to the client (using geckos.io or any other library)
-    this.io.emit("update", snapshot);
-
-    */
   }
 }

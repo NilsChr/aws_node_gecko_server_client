@@ -1,51 +1,44 @@
-export default class ServerPlayer {
-  constructor(id, x, y, type) {
-    this.id = id;
-    this.x = x;
-    this.y = y;
-    this.px = x;
-    this.py = y;
-    this.dx = 0;
-    this.dy = 0;
-    this.type = type;
+import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
+import EVENTS_UDP from "../../common/eventsUDP.js";
+import GameObject, { GO_ANIMATION_STATES } from "../../common/gameObject.js";
+import MATH_HELPERS from "../../common/MathHelpers.js";
+import damageSystem from "./systems/damage.system.js";
+
+export default class ServerPlayer extends GameObject {
+  constructor(game, channel, x, y, type) {
+    super(channel.id, x, y, type);
+    this.game = game;
+    this.channel = channel;
     this.target = null;
-    this.moveSpeed = 1;
 
-    //this.SI = null;
-    //this.channel = null;
+    this.stats.moveSpeed = 2;
   }
 
-  update(gameobjects) {
-    this.x += this.dx;
-    this.y += this.dy;
-
-    this.dx = 0;
-    this.dy = 0;
-  }
-
-  hasChanged() {
-    return this.px != this.x || this.py || this.y;
-  }
-  
   handleInput(input) {
-    if (input[0]) this.dx -= this.moveSpeed;
-    if (input[1]) this.dx += this.moveSpeed;
-    if (input[2]) this.dy += this.moveSpeed;
-    if (input[3]) this.dy -= this.moveSpeed;
-    /*
-        if (input[0]) this.x--;
-        if (input[1]) this.x++;
-        if (input[2]) this.y++;
-        if (input[3]) this.y--;
-        */
+    if (input[0]) this.vel.x--;
+    if (input[1]) this.vel.x++;
+    if (input[2]) this.vel.y++;
+    if (input[3]) this.vel.y--;
   }
 
-  parseForTransfer() {
-    return {
-      id: this.id,
-      x: this.x,
-      y: this.y,
-      type: this.type,
-    };
+  useSkill(skill_no) {
+    let now = performance.now();
+    let diff = now - this.lastAttack;
+
+    if (diff > this.stats.attackSpeed) {
+      //console.log("ATTACK", this.stats.attackSpeed);
+      this.lastAttack = now;
+      let enemies = this.game.gameobjects
+        .filter((g) => g.type != GAME_UNIT_TYPES.PLAYER)
+        .filter((g) => MATH_HELPERS.getDistanceVec2(g.pos, this.pos) < this.stats.attackRange);
+     // console.log("HIT ", enemies);
+      enemies.forEach((e) => {
+        let hit = damageSystem(this, e);
+      });
+      this.channel.emit(EVENTS_UDP.fromServer.unitUseSkill, {attackerId: this.id, skillId: skill_no}, {
+        reliable: true,
+      });
+      //this.animationState = GO_ANIMATION_STATES.ATTACK_NORMAL;
+    }
   }
 }

@@ -8,12 +8,13 @@ import INPUT from "./input.js";
 import ASSET_MANAGER from "./managers/assetManager.js";
 import GAME_OBJECT_RENDERER from "./systems/gameObjectRenderer.js";
 import GAME_UNIT_TYPES from "./factories/gameUnitTypes.js";
-const SI = new SnapshotInterpolation(30);
+import MATH_HELPERS from "../common/MathHelpers.js";
+import GAME_CONSTANS from "../common/gameConstants.js";
+import EVENTS_UDP from "../common/eventsUDP.js";
+import { GO_ANIMATION_STATES } from "../common/gameObject.js";
+const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let sketch = function (p) {
-  let x = 100;
-  let y = 100;
-
   let img = null;
 
   p.preload = function () {
@@ -30,71 +31,97 @@ let sketch = function (p) {
 
     channel.onConnect((error) => {
       gameState.myId = channel.id;
-
       if (error) console.error(error.message);
-      channel.on("update", (snapshot) => {
-        console.log(snapshot.state.length);
+
+      channel.on(EVENTS_UDP.fromServer.update, (snapshot) => {
+       // console.log(snapshot.state.length);
         SI.snapshot.add(snapshot);
+
+        if (snapshot.state.length != gameState.gameobjects.length) {
+          snapshot.state.forEach((s) => {
+            let unit = gameState.gameobjects.filter((g) => g.id == s.id)[0];
+            if (!unit) {
+              UNIT_FACTORY.spawnUnit(s);
+            }
+          });
+        }
       });
-      channel.on("ready", () => {
+
+      channel.on(EVENTS_UDP.fromServer.ready, () => {
         console.log("Channel ready");
       });
 
-      channel.on("playerJoined", (data) => {
+      channel.on(EVENTS_UDP.fromServer.playerJoined, (data) => {
         console.log("player joined!", data);
-        //let players = data.filter(o => o.type == GAME_UNIT_TYPES.PLAYER);
+        let go = gameState.gameobjects;
         data.forEach((newObj) => {
-          console.log(newObj);
-          //let obj = gameState.gameobjects.find((g) => g.id === newObj.id);
-          let obj = gameState.gameobjects.filter((g) => g != null && g.id === newObj.id)[0];
+          let obj = go.filter((g) => g != null && g.id === newObj.id)[0];
           if (!obj) {
-            // UNIT_FACTORY.spawnUnit(newObj);
             UNIT_FACTORY.spawnUnit(newObj);
           }
         });
+      });
+
+      channel.on(EVENTS_UDP.fromServer.unitUseSkill, (data) => {
+        let unit = gameState.gameobjects.find(o => o.id == data.attackerId);
+        unit.setAnimationState(1);
+        setTimeout(() => {
+          unit.setAnimationState(GO_ANIMATION_STATES.IDLE);
+        }, 230);
+        /*
+        let player = gameState.clientPlayerGameObject;
+        player.setAnimationState(1);
+        setTimeout(() => {
+          player.setAnimationState(GO_ANIMATION_STATES.IDLE);
+        }, 230);
+        */
       });
     });
   };
 
   let frameCount = 0;
   p.draw = function () {
+    p.imageMode(p.CENTER);
     frameCount++;
     p.background(0);
 
-    p.fill(255);
-    p.rect(x, y, 50, 50);
-
-    //p.image(img, 40, 40);
-    //p.image(ASSET_MANAGER.getAsset('units'), 40, 40);
-
     if (gameState.myId == null) return;
 
+    let player = gameState.clientPlayerGameObject;
+    if (!player) return;
+    p.fill("#718C5C");
+    p.ellipse(
+      player.x,
+      player.y,
+      GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE * 2,
+      GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE * 2
+    );
     SI.snapshot.create(gameState.gameobjects);
 
-    const snapshot = SI.calcInterpolation("x y"); // [deep: string] as optional second parameter
+    const snapshot = SI.calcInterpolation("x y");
     if (!snapshot) return;
 
-    // access your state
     const { state } = snapshot;
-    // apply the interpolated values to you game objects
+
     for (let i = 0; i < state.length; i++) {
-      const { id, x, y } = state[i];
+      const { id, x, y, animationState } = state[i];
       let obj = gameState.gameobjects.find((p) => p.id === id);
-      if (!obj) return;
-      if (obj.id === gameState.myId) {
-        //player.checkInput();
-        //player.sx = x;
-        //player.sy = y;
-        gameState.clientPlayer.checkInput();
-       // if(frameCount % 10 == 0) {
-          obj.x = x;
-          obj.y = y;
-        //}
-      } else {
-        obj.x = x;
-        obj.y = y;
+      if (!obj) {
+        //console.log('no obj', id)
+        continue;
       }
-      //obj.update();
+      if (obj.id === gameState.myId) {
+        gameState.clientPlayer.checkInput();
+      } else {
+        let dist = MATH_HELPERS.getDistance(player.x, player.y, obj.x, obj.y);
+        if (dist > GAME_CONSTANS.PLAYER_DESTROY_NOT_SEEN_ENEMIES_DISTANCE) {
+          gameState.gameobjects.splice(gameState.gameobjects.indexOf(obj), 1);
+        }
+      }
+      //obj.setAnimationState(animationState);
+      obj.x = x;
+      obj.y = y;
+
       GAME_OBJECT_RENDERER.renderObject(p, obj);
     }
   };
@@ -102,11 +129,15 @@ let sketch = function (p) {
   p.keyPressed = function (e) {
     if (e.key === "p") {
       console.log(gameState);
+      console.log();
     }
     if (e.key === INPUT.controls.MOVE_LEFT) INPUT.input.MOVE_LEFT = true;
     if (e.key === INPUT.controls.MOVE_RIGHT) INPUT.input.MOVE_RIGHT = true;
     if (e.key === INPUT.controls.MOVE_UP) INPUT.input.MOVE_UP = true;
     if (e.key === INPUT.controls.MOVE_DOWN) INPUT.input.MOVE_DOWN = true;
+
+    if (e.key === INPUT.controls.SKILL_1)
+      gameState.clientPlayer.useSkill(INPUT.input.SKILL_1);
   };
 
   p.keyReleased = function (e) {

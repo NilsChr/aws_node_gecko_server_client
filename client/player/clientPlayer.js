@@ -1,11 +1,14 @@
+import { GO_ANIMATION_STATES } from "../../common/gameObject.js";
+import GameUnit from "../factories/gameUnit.js";
 import gameState from "../gameState.js";
 import INPUT from "../input.js";
 
-export class ClientPlayer {
-  constructor(id, x, y) {
-    this.id = id;
-    this.x = x;
-    this.y = y;
+export class ClientPlayer extends GameUnit {
+  constructor(id, x, y, type, animationState) {
+    super(id, x, y, type, animationState);
+    //this.id = id;
+    //this.x = x;
+    //this.y = y;
   }
   checkInput() {
     let dx = 0;
@@ -39,5 +42,10 @@ export class ClientPlayer {
       INPUT.input.MOVE_UP,
     ];
     gameState.channel.emit("client:playerInput", data);
+  }
+
+  useSkill(skill_slot) {
+    console.log("using skill ", skill_slot);
+    gameState.channel.emit("client:useSkill", skill_slot, { reliable: true });
   }
 }
