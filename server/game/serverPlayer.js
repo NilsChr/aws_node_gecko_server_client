@@ -1,5 +1,6 @@
 import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
 import EVENTS_UDP from "../../common/eventsUDP.js";
+import GAME_CONSTANS from "../../common/gameConstants.js";
 import GameObject, { GO_ANIMATION_STATES } from "../../common/gameObject.js";
 import MATH_HELPERS from "../../common/MathHelpers.js";
 import damageSystem from "./systems/damage.system.js";
@@ -30,14 +31,37 @@ export default class ServerPlayer extends GameObject {
       this.lastAttack = now;
       let enemies = this.game.gameobjects
         .filter((g) => g.type != GAME_UNIT_TYPES.PLAYER)
-        .filter((g) => MATH_HELPERS.getDistanceVec2(g.pos, this.pos) < this.stats.attackRange);
-     // console.log("HIT ", enemies);
+        .filter(
+          (g) =>
+            MATH_HELPERS.getDistanceVec2(g.pos, this.pos) <
+            this.stats.attackRange
+        );
+      // console.log("HIT ", enemies);
       enemies.forEach((e) => {
         let hit = damageSystem(this, e);
       });
+
+      let withinRange = this.game.getPlayersWithinRange(
+        this,
+        GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
+      );
+      //console.log('withinRange', withinRange);
+      withinRange.forEach((e) => {
+        e.channel.emit(
+          EVENTS_UDP.fromServer.unitUseSkill,
+          { attackerId: this.id, skillId: 0 },
+          {
+            reliable: true,
+          }
+        );
+      });
+      
+
+      /*
       this.channel.emit(EVENTS_UDP.fromServer.unitUseSkill, {attackerId: this.id, skillId: skill_no}, {
         reliable: true,
       });
+      */
       //this.animationState = GO_ANIMATION_STATES.ATTACK_NORMAL;
     }
   }

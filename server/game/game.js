@@ -102,6 +102,15 @@ export class Game {
     );
   }
 
+  getPlayersWithinRange(player, range) {
+    return this.gameobjects.filter(
+      (p) =>
+        p.type === GAME_UNIT_TYPES.PLAYER &&
+        MathHelpers.getDistance(player.pos.x, player.pos.y, p.pos.x, p.pos.y) <
+        range
+    );
+  }
+
   update() {
     // Run GameObject Logic
     this.gameobjects.forEach((o) => {

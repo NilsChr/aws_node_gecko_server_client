@@ -1,5 +1,6 @@
 import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
 import EVENTS_UDP from "../../common/eventsUDP.js";
+import GAME_CONSTANS from "../../common/gameConstants.js";
 import GameObject from "../../common/gameObject.js";
 import MATH_HELPERS from "../../common/MathHelpers.js";
 import DAMAGE_SYSTEM from "./systems/damage.system.js";
@@ -132,6 +133,13 @@ export default class ServerEnemy extends GameObject {
       // console.log("HIT ", enemies);
       enemies.forEach((e) => {
         let hit = DAMAGE_SYSTEM(this, e);
+      });
+      let withinRange = this.game.getPlayersWithinRange(
+        this,
+        GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
+      )
+      //console.log('withinRange', withinRange);
+      withinRange.forEach(e => {
         e.channel.emit(
           EVENTS_UDP.fromServer.unitUseSkill,
           { attackerId: this.id, skillId: 0 },
@@ -139,7 +147,7 @@ export default class ServerEnemy extends GameObject {
             reliable: true,
           }
         );
-      });
+      })
 
       /*
       this.channel.emit(EVENTS_UDP.fromServer.playerUseSkill, skill_no, {
