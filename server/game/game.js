@@ -8,6 +8,7 @@ import registerEvents from "./transportEvents/index.js";
 import MathHelpers from "../../common/MathHelpers.js";
 import GAME_CONSTANS from "../../common/gameConstants.js";
 import EVENTS_UDP from "../../common/eventsUDP.js";
+import DB from "../db/dbConnection.js";
 
 export class Game {
   running = false;
@@ -21,7 +22,7 @@ export class Game {
     this.io = server;
     this.init(server);
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 1; i++) {
       let testSkeleton = new ServerEnemy(
         this,
         i,
@@ -31,6 +32,13 @@ export class Game {
       );
       this.gameobjects.push(testSkeleton);
     }
+
+    let boss = new ServerEnemy(this, 666, 240, 300, GAME_UNIT_TYPES.BOSS);
+    boss.stats.moveSpeed = 1.69;
+    boss.stats.attackSpeed = 400;
+    boss.stats.aggroRange = 100;
+    boss.stats.power = 2;
+    this.gameobjects.push(boss);
   }
 
   init(server) {
@@ -85,6 +93,61 @@ export class Game {
       }.bind(this),
       1000 / GAME_CONSTANS.SERVER_FPS
     );
+
+    this.loop = setInterval(
+      function () {
+        this.slowUpdate();
+      }.bind(this),
+      GAME_CONSTANS.SERVER_SLOW_FPS
+    );
+  }
+
+  update() {
+    // Run GameObject Logic
+    this.gameobjects.forEach((o) => {
+      o.tick(this.gameobjects);
+    });
+    //this.gameobjects = this.gameobjects.filter((go) => !go.dead);
+
+    for (let i = this.channels.length; i >= 0; i--) {
+      let channel = this.channels[i];
+      if (!channel) continue;
+      let player = this.players[channel.id];
+
+      // Get all other game objects with range and create a snapshot
+      // This way clients will not get every object in the world
+      let gameObjectsWithinRange = this.gameobjects.filter(
+        (p) =>
+          !p.dead &&
+          MathHelpers.getDistance(
+            player.pos.x,
+            player.pos.y,
+            p.pos.x,
+            p.pos.y
+          ) < GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
+      );
+      const snapshot = this.SIVaults[channel.id].snapshot.create(
+        gameObjectsWithinRange.map((p) => p.parseForTransfer())
+      );
+      this.SIVaults[channel.id].vault.add(snapshot);
+      channel.emit(EVENTS_UDP.fromServer.update, snapshot);
+    }
+  }
+
+  slowUpdate() {
+    this.gameobjects
+      .filter((o) => o.type === GAME_UNIT_TYPES.PLAYER)
+      .forEach((player) => {
+        for (let i = 0; i < DB.cache.zones.length; i++) {
+          let zone = DB.cache.zones[i];
+          let inZone = zone.inWorld(player);
+          //console.log(`${player.id}: (x:${player.pos.x} y:${player.pos.y}) in zone ${zone.id} = ${inZone}`);
+          if (inZone && zone.id !== player.currentZone) {
+            player.setZone(zone);
+            break;
+          }
+        }
+      });
   }
 
   removeGameObject(id) {
@@ -107,35 +170,20 @@ export class Game {
       (p) =>
         p.type === GAME_UNIT_TYPES.PLAYER &&
         MathHelpers.getDistance(player.pos.x, player.pos.y, p.pos.x, p.pos.y) <
-        range
+          range
     );
   }
 
-  update() {
-    // Run GameObject Logic
-    this.gameobjects.forEach((o) => {
-      o.tick(this.gameobjects);
+  logState() {
+    let s = [];
+    console.log("LOGGING");
+    this.gameobjects.forEach((g) => {
+      //      console.log("HEY", g);
+      let o = { ...g }; //JSON.parse(JSON.stringify(g));
+      delete o.game;
+      delete o.channel;
+      s.push(o);
     });
-    this.gameobjects = this.gameobjects.filter((go) => !go.dead);
-
-    for (let i = this.channels.length; i >= 0; i--) {
-      let channel = this.channels[i];
-      if (!channel) continue;
-      let player = this.players[channel.id];
-      let gameObjectsWithinRange = this.gameobjects.filter(
-        (p) =>
-          MathHelpers.getDistance(
-            player.pos.x,
-            player.pos.y,
-            p.pos.x,
-            p.pos.y
-          ) < GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
-      );
-      const snapshot = this.SIVaults[channel.id].snapshot.create(
-        gameObjectsWithinRange.map((p) => p.parseForTransfer())
-      );
-      this.SIVaults[channel.id].vault.add(snapshot);
-      channel.emit(EVENTS_UDP.fromServer.update, snapshot);
-    }
+    console.log(s);
   }
 }

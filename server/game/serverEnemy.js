@@ -10,6 +10,8 @@ const STATES = {
   MOVE_TOWARDS_TARGET: 2,
   MOVE_HOME: 3,
   ATTACK: 4,
+  DEAD: 5,
+  DESPAWNED: 6,
 };
 
 export default class ServerEnemy extends GameObject {
@@ -19,6 +21,8 @@ export default class ServerEnemy extends GameObject {
     this.state = STATES.FIND_TARGET;
     this.start = this.pos.copy();
     this.target = null;
+    this.despawnTimer = 1000;
+    this.respawnTimer = 1000;
   }
 
   update(gameObjects) {
@@ -35,7 +39,34 @@ export default class ServerEnemy extends GameObject {
       case STATES.ATTACK:
         this.attack();
         break;
+      case STATES.DEAD:
+        break;
     }
+  }
+
+  respawn() {
+    this.stats.reset();
+    this.pos = this.start.copy();
+    this.state = STATES.FIND_TARGET;
+    this.dead = false;
+   // console.log("RESPAWN");
+
+    //console.log(this);
+  }
+
+  onDeath() {
+    //console.log("ON DEATH");
+
+    this.state = STATES.DEAD;
+    this.target = null;
+    this.dead = true;
+    let that = this;
+    setTimeout(function () {
+      that.state = STATES.DESPAWNED;
+      setTimeout(function () {
+        that.respawn();
+      }, that.respawnTimer);
+    }, that.despawnTimer);
   }
 
   findTarget(gameObjects) {
@@ -91,7 +122,9 @@ export default class ServerEnemy extends GameObject {
     this.vel.x -= Math.cos(angleRadians);
     this.vel.y -= Math.sin(angleRadians);
 
-    if (MATH_HELPERS.getDistanceVec2(this.start, this.pos) < 0.5) {
+    if (
+      MATH_HELPERS.getDistanceVec2(this.start, this.pos) <= this.stats.moveSpeed * 2
+    ) {
       this.pos.x = this.start.x;
       this.pos.y = this.start.y;
       this.state = STATES.FIND_TARGET;
@@ -137,9 +170,9 @@ export default class ServerEnemy extends GameObject {
       let withinRange = this.game.getPlayersWithinRange(
         this,
         GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
-      )
+      );
       //console.log('withinRange', withinRange);
-      withinRange.forEach(e => {
+      withinRange.forEach((e) => {
         e.channel.emit(
           EVENTS_UDP.fromServer.unitUseSkill,
           { attackerId: this.id, skillId: 0 },
@@ -147,14 +180,8 @@ export default class ServerEnemy extends GameObject {
             reliable: true,
           }
         );
-      })
-
-      /*
-      this.channel.emit(EVENTS_UDP.fromServer.playerUseSkill, skill_no, {
-        reliable: true,
       });
-      */
-      //this.animationState = GO_ANIMATION_STATES.ATTACK_NORMAL;
+
     }
   }
 }

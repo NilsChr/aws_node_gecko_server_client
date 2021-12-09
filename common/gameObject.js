@@ -10,11 +10,16 @@ export const GO_ANIMATION_STATES = {
 export class GameUnitStats {
     constructor(hp = 5, power = 1) {
         this.hp = hp;
+        this.maxHp = hp;
         this.power = power;
         this.attackSpeed = 500;
         this.moveSpeed = 1;
         this.aggroRange = 50;
         this.attackRange = 30;
+    }
+
+    reset() {
+      this.hp = this.maxHp;
     }
 }
 
@@ -62,5 +67,9 @@ export default class GameObject {
       type: this.type,
       animationState: this.animationState
     };
+  }
+
+  onDeath() {
+    
   }
 }

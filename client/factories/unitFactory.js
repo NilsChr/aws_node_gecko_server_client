@@ -6,7 +6,7 @@ import GAME_UNIT_TYPES from "./gameUnitTypes.js";
 const UNIT_FACTORY = {
   spawnUnit: function (unitBlueprint) {
     const { id, x, y, animationState } = unitBlueprint;
-    let a = animationState; // prevents lines to get so long they wrap 
+    let a = animationState; // prevents lines to get so long they wrap
 
     if (unitBlueprint.id === gameState.myId) {
       //gameState.clientPlayer = new ClientPlayer(id, x, y);
@@ -26,6 +26,9 @@ const UNIT_FACTORY = {
         break;
       case GAME_UNIT_TYPES.SKELETON_1:
         gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.SKELETON_1, a);
+        break;
+      case GAME_UNIT_TYPES.BOSS:
+        gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.BOSS, a);
         break;
     }
     if (!gameObject) {

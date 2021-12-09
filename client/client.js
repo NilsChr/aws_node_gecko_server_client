@@ -12,6 +12,8 @@ import MATH_HELPERS from "../common/MathHelpers.js";
 import GAME_CONSTANS from "../common/gameConstants.js";
 import EVENTS_UDP from "../common/eventsUDP.js";
 import { GO_ANIMATION_STATES } from "../common/gameObject.js";
+import axios from "axios";
+import registerClientEvents from "./transportEvents/index.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let sketch = function (p) {
@@ -19,32 +21,31 @@ let sketch = function (p) {
 
   p.preload = function () {
     img = p.loadImage("assets/rpg_units.png");
-    ASSET_MANAGER.loadAsset(p, "units", "./assets/rpg_units3.png");
+    ASSET_MANAGER.loadAsset(p, "units", "./assets/rpg_units4.png");
   };
 
   p.setup = function () {
-    p.createCanvas(700, 410);
+    p.createCanvas(window.innerWidth, window.innerHeight);
     p.noSmooth();
 
     let channel = geckos({ port: 3000 });
     gameState.channel = channel;
+
+    registerClientEvents(channel);
 
     channel.onConnect((error) => {
       gameState.myId = channel.id;
       if (error) console.error(error.message);
 
       channel.on(EVENTS_UDP.fromServer.update, (snapshot) => {
-       // console.log(snapshot.state.length);
         SI.snapshot.add(snapshot);
 
-        if (snapshot.state.length != gameState.gameobjects.length) {
-          snapshot.state.forEach((s) => {
-            let unit = gameState.gameobjects.filter((g) => g.id == s.id)[0];
-            if (!unit) {
-              UNIT_FACTORY.spawnUnit(s);
-            }
-          });
-        }
+        snapshot.state.forEach((s) => {
+          let unit = gameState.gameobjects.filter((g) => g.id == s.id)[0];
+          if (!unit) {
+            UNIT_FACTORY.spawnUnit(s);
+          }
+        });
       });
 
       channel.on(EVENTS_UDP.fromServer.ready, () => {
@@ -63,18 +64,11 @@ let sketch = function (p) {
       });
 
       channel.on(EVENTS_UDP.fromServer.unitUseSkill, (data) => {
-        let unit = gameState.gameobjects.find(o => o.id == data.attackerId);
+        let unit = gameState.gameobjects.find((o) => o.id == data.attackerId);
         unit.setAnimationState(1);
         setTimeout(() => {
           unit.setAnimationState(GO_ANIMATION_STATES.IDLE);
         }, 230);
-        /*
-        let player = gameState.clientPlayerGameObject;
-        player.setAnimationState(1);
-        setTimeout(() => {
-          player.setAnimationState(GO_ANIMATION_STATES.IDLE);
-        }, 230);
-        */
       });
     });
   };
@@ -123,6 +117,7 @@ let sketch = function (p) {
       obj.y = y;
 
       GAME_OBJECT_RENDERER.renderObject(p, obj);
+      obj.update();
     }
   };
 
@@ -130,6 +125,11 @@ let sketch = function (p) {
     if (e.key === "p") {
       console.log(gameState);
       console.log();
+    }
+    if (e.key === "+") {
+      axios.get("http://localhost:3000/getState").then((d) => {
+        console.log(d);
+      });
     }
     if (e.key === INPUT.controls.MOVE_LEFT) INPUT.input.MOVE_LEFT = true;
     if (e.key === INPUT.controls.MOVE_RIGHT) INPUT.input.MOVE_RIGHT = true;

@@ -11,6 +11,10 @@ GAME_UNIT_DATA[GAME_UNIT_TYPES.SKELETON_1] = {
   imgKey: 'units',
   row: 0 * 32
 }
+GAME_UNIT_DATA[GAME_UNIT_TYPES.BOSS] = {
+  imgKey: 'units',
+  row: 2 * 32
+}
 
 const GAME_OBJECT_RENDERER = {
   renderObject: function (p, obj) {
@@ -21,7 +25,13 @@ const GAME_OBJECT_RENDERER = {
 };
 
 function render(p, imgKey,obj, state,unitRow) {
-  p.image(ASSET_MANAGER.getAsset(imgKey), obj.x, obj.y, 32,32, 32* state, unitRow, 32,32);
+  p.push();
+  //let dir = obj.x < obj.dx ? -1 : 1;
+  p.translate(obj.x, obj.y);
+  p.scale(obj.dir,1);
+  p.image(ASSET_MANAGER.getAsset(imgKey), 0,0, 32,32, 32* state, unitRow, 32,32);
+  //p.image(ASSET_MANAGER.getAsset(imgKey), obj.x, obj.y, 32,32, 32* state, unitRow, 32,32);
+  p.pop();
 }
 
 

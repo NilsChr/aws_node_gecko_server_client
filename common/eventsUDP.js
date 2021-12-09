@@ -4,7 +4,8 @@ const EVENTS_UDP = {
         playerJoined: "server:playerJoined",
         removePlayer: "server:removePlayer",
         update: "server:update",
-        unitUseSkill: "server:useSkill"
+        unitUseSkill: "server:useSkill",
+        enteredNewZone: "server:enteredNewZone"
     },
     fromClient: {
         playerInput: "client:playerInput",

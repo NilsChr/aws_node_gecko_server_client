@@ -13,6 +13,9 @@ export default class ServerPlayer extends GameObject {
     this.target = null;
 
     this.stats.moveSpeed = 2;
+    this.stats.hp = 20;
+
+    this.currentZone = -1;
   }
 
   handleInput(input) {
@@ -22,12 +25,16 @@ export default class ServerPlayer extends GameObject {
     if (input[3]) this.vel.y--;
   }
 
+  setZone(zone) {
+    this.currentZone = zone.id;
+    this.channel.emit(EVENTS_UDP.fromServer.enteredNewZone, zone,  { reliable: true });
+  }
+
   useSkill(skill_no) {
     let now = performance.now();
     let diff = now - this.lastAttack;
 
     if (diff > this.stats.attackSpeed) {
-      //console.log("ATTACK", this.stats.attackSpeed);
       this.lastAttack = now;
       let enemies = this.game.gameobjects
         .filter((g) => g.type != GAME_UNIT_TYPES.PLAYER)
@@ -36,7 +43,6 @@ export default class ServerPlayer extends GameObject {
             MATH_HELPERS.getDistanceVec2(g.pos, this.pos) <
             this.stats.attackRange
         );
-      // console.log("HIT ", enemies);
       enemies.forEach((e) => {
         let hit = damageSystem(this, e);
       });
@@ -45,7 +51,7 @@ export default class ServerPlayer extends GameObject {
         this,
         GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
       );
-      //console.log('withinRange', withinRange);
+
       withinRange.forEach((e) => {
         e.channel.emit(
           EVENTS_UDP.fromServer.unitUseSkill,
@@ -55,14 +61,6 @@ export default class ServerPlayer extends GameObject {
           }
         );
       });
-      
-
-      /*
-      this.channel.emit(EVENTS_UDP.fromServer.unitUseSkill, {attackerId: this.id, skillId: skill_no}, {
-        reliable: true,
-      });
-      */
-      //this.animationState = GO_ANIMATION_STATES.ATTACK_NORMAL;
     }
   }
 }
