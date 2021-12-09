@@ -22,7 +22,7 @@ export class Game {
     this.io = server;
     this.init(server);
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 5; i++) {
       let testSkeleton = new ServerEnemy(
         this,
         i,
@@ -52,7 +52,7 @@ export class Game {
       let newPlayer = new ServerPlayer(
         this,
         channel,
-        20,
+        220,
         20,
         GAME_UNIT_TYPES.PLAYER
       );
