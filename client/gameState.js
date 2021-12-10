@@ -4,4 +4,6 @@ export default {
   clientPlayer: null,
   clientPlayerGameObject: null,
   gameobjects: [],
+  currentZone: 1,
+  zones: []
 };

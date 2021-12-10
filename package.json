@@ -13,7 +13,8 @@
     "serve": "webpack -c webpack.config.cjs && cross-env-shell NODE_ENV=production node server/server.js",
     "test": "node test/test.js",
     "dev:webpack": "webpack -c webpack.config.cjs --watch",
-    "dev:nodemon": "nodemon --delay 500ms server/server.js"
+    "dev:nodemon": "nodemon --delay 500ms server/server.js",
+    "db:fillzones": "node ./data_setup/index.js"
   },
   "keywords": [],
   "author": "",

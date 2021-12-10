@@ -16,8 +16,15 @@ import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
+axios.get("http://localhost:3000/getZones").then((d) => {
+  console.log(d.data);
+  gameState.zones = d.data;
+});
+
 let sketch = function (p) {
   let img = null;
+  let shadow = null;
+  let shadow_circle = null;
 
   p.preload = function () {
     img = p.loadImage("assets/rpg_units.png");
@@ -83,19 +90,41 @@ let sketch = function (p) {
 
     let player = gameState.clientPlayerGameObject;
     if (!player) return;
-    p.fill("#718C5C");
+    
+    // GRASS 
+    /*
+    p.fill("#718C5C"); 
+    p.fill(gameState)
     p.ellipse(
       player.x,
       player.y,
       GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE * 2,
       GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE * 2
     );
+    */
     SI.snapshot.create(gameState.gameobjects);
 
     const snapshot = SI.calcInterpolation("x y");
     if (!snapshot) return;
 
     const { state } = snapshot;
+
+    p.push();
+    let scale = 4;
+    //p.translate(-(player.x * scale) - (p.width * scale / 2),-player.y*scale);
+    //p.translate(-(player.x * scale) ,-player.y*scale); // KORRECT
+    p.translate(-(player.x * scale) + p.width/2,-(player.y*scale) + p.height/2);
+    p.scale(scale,scale);
+
+
+    gameState.zones.forEach((z) => {
+      //console.log(z.dim);
+      if (z.dim) {
+        p.fill(z.color);
+        p.text(z.title, z.pos.x, z.pos.y);
+        p.rect(z.pos.x, z.pos.y, z.dim.x, z.dim.y);
+      }
+    });
 
     for (let i = 0; i < state.length; i++) {
       const { id, x, y, animationState } = state[i];
@@ -119,6 +148,8 @@ let sketch = function (p) {
       GAME_OBJECT_RENDERER.renderObject(p, obj);
       obj.update();
     }
+    p.pop();
+
   };
 
   p.keyPressed = function (e) {

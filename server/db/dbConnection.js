@@ -20,7 +20,7 @@ const DB = {
     let data = await this.zones.getAll();
     this.cache.zones = [];
     data.rows.forEach((z) => {
-      let zone = new Zone(z.id, z.title, z.pos_x, z.pos_y, z.dim_x, z.dim_y);
+      let zone = new Zone(z.id, z.title,z.color_hex, z.pos_x, z.pos_y, z.dim_x, z.dim_y);
       this.cache.zones.push(zone);
       this.cache.zones_map[zone.id] = zone;
     });
@@ -28,9 +28,22 @@ const DB = {
   },
   cache: {
     zones: [],
-    zones_map: []
+    zones_map: [],
   },
   zones: {
+    uploadZone: async function (zone) {
+      try {
+        const { title, color, x,y,dim } = zone;
+        let res = await pool.query(
+          "INSERT INTO zones (title, color_hex, pos_x, pos_y, dim_x, dim_y) VALUES ($1, $2, $3, $4, $5, $6)",
+          [title,color, x,y,dim, dim]
+        );
+        //console.log(res);
+      } catch (e) {
+        console.log(e);
+        return [];
+      }
+    },
     getAll: async function () {
       try {
         let res = await pool.query("SELECT * FROM zones ORDER BY id ASC");
