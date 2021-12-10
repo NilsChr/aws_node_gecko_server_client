@@ -16,7 +16,10 @@ import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
-axios.get("http://localhost:3000/getZones").then((d) => {
+let url = '70.34.203.138:3000'
+let url_test = 'http://localhost:3000'
+
+axios.get(url+"/getZones").then((d) => {
   console.log(d.data);
   gameState.zones = d.data;
 });
