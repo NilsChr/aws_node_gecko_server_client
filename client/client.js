@@ -165,6 +165,13 @@ let sketch = function (p) {
         console.log(d);
       });
     }
+    console.log(e);
+    if (e.key === "?") {
+      axios.get("http://localhost:3000/restart").then((d) => {
+        console.log(d);
+        location.reload();
+      });
+    }
     if (e.key === INPUT.controls.MOVE_LEFT) INPUT.input.MOVE_LEFT = true;
     if (e.key === INPUT.controls.MOVE_RIGHT) INPUT.input.MOVE_RIGHT = true;
     if (e.key === INPUT.controls.MOVE_UP) INPUT.input.MOVE_UP = true;

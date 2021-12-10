@@ -17,13 +17,12 @@ const __dirname = dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-const game = new Game(server);
-//game.start();
-
-//DB
-//let z = DB.zones.getAll();
-//console.log(z);
-DB.loadAll(game)
+let game;
+function startGame() {
+  game = new Game(server);
+  DB.loadAll(game)
+}
+startGame();
 
 
 const port = 3000;
@@ -51,6 +50,19 @@ app.get("/getZones", (req, res) => {
   try {
     
     return res.status(200).send(DB.cache.zones);
+    //return res.json({ objs: game.gameobject })
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/restart", (req, res) => {
+  try {
+    console.log('RESTART');
+    game.destroy();
+    game = null;
+    startGame();
+    return res.status(200).send();
     //return res.json({ objs: game.gameobject })
   } catch (error) {
     return res.status(500).json({ error: error.message });

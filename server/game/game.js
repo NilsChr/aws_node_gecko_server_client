@@ -13,6 +13,7 @@ import DB from "../db/dbConnection.js";
 export class Game {
   running = false;
   loop = null;
+  loopSlow = null;
   gameobjects = [];
   players = [];
   channels = [];
@@ -39,6 +40,20 @@ export class Game {
     boss.stats.aggroRange = 100;
     boss.stats.power = 2;
     this.gameobjects.push(boss);
+  }
+
+  destroy() {
+    clearInterval(this.loop);
+    clearInterval(this.loopSlow);
+    this.loop = null;
+    this.loopSlow = null;
+    this.players = [];
+    this.gameobjects = [];
+    this.channels = [];
+    this.SIVaults = [];
+    this.running = false;
+    this.io = null;
+    console.log("Stopped", this);
   }
 
   init(server) {
@@ -87,6 +102,7 @@ export class Game {
 
   start() {
     this.running = true;
+    if(this.loop != null || this.loopSlow != null) return;
     this.loop = setInterval(
       function () {
         this.update();
@@ -94,7 +110,7 @@ export class Game {
       1000 / GAME_CONSTANS.SERVER_FPS
     );
 
-    this.loop = setInterval(
+    this.loopSlow = setInterval(
       function () {
         this.slowUpdate();
       }.bind(this),
