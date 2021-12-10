@@ -1,9 +1,10 @@
-import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
+import GAME_UNIT_TYPES from "../../common/gameUnitTypes.js";
 import EVENTS_UDP from "../../common/eventsUDP.js";
 import GAME_CONSTANS from "../../common/gameConstants.js";
 import GameObject, { GO_ANIMATION_STATES } from "../../common/gameObject.js";
 import MATH_HELPERS from "../../common/MathHelpers.js";
 import damageSystem from "./systems/damage.system.js";
+import DB from "../db/dbConnection.js";
 
 export default class ServerPlayer extends GameObject {
   constructor(game, channel, x, y, type) {
@@ -14,7 +15,7 @@ export default class ServerPlayer extends GameObject {
 
     this.stats.moveSpeed = 2;
     this.stats.hp = 20;
-
+    this.isGhost = false;
     this.currentZone = -1;
   }
 
@@ -23,6 +24,23 @@ export default class ServerPlayer extends GameObject {
     if (input[1]) this.vel.x++;
     if (input[2]) this.vel.y++;
     if (input[3]) this.vel.y--;
+  }
+
+  onDeath() {
+    this.isGhost = true;
+    console.log("PLAYER IS GHOST");
+
+    let zone = DB.cache.zones_map[this.currentZone];
+    console.log(zone);
+    // Move to zone graveyard
+    this.pos = DB.cache.zones_map[this.currentZone].pos.copy();
+    console.log(this.pos);
+    this.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id,  { reliable: true });
+    
+    // Add grave
+
+    // TODO: Change this
+
   }
 
   setZone(zone) {

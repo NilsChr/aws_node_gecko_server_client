@@ -8,4 +8,9 @@ const ASSET_MANAGER = {
   },
 };
 
+export const ASSET_KEYS = {
+  UNITS: 'units',
+  GRAVEYARD: 'graveyard'
+}
+
 export default ASSET_MANAGER;

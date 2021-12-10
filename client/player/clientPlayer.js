@@ -4,6 +4,7 @@ import gameState from "../gameState.js";
 import INPUT from "../input.js";
 
 export class ClientPlayer extends GameUnit {
+  isGhost = false;
   constructor(id, x, y, type, animationState) {
     super(id, x, y, type, animationState);
     //this.id = id;

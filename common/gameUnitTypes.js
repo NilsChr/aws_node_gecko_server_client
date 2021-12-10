@@ -1,0 +1,9 @@
+const GAME_UNIT_TYPES = {
+  PLAYER: 1,
+  SKELETON_1: 2,
+  BOSS: 3,
+  GRAVEYARD_GRAVE: 4,
+  GRAVEYARD_ANGEL: 5
+};
+
+export default GAME_UNIT_TYPES;

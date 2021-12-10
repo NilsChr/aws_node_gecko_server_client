@@ -1,4 +1,4 @@
-import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
+import GAME_UNIT_TYPES from "../../common/gameUnitTypes.js";
 import EVENTS_UDP from "../../common/eventsUDP.js";
 import GAME_CONSTANS from "../../common/gameConstants.js";
 import GameObject from "../../common/gameObject.js";
@@ -49,14 +49,13 @@ export default class ServerEnemy extends GameObject {
     this.pos = this.start.copy();
     this.state = STATES.FIND_TARGET;
     this.dead = false;
-   // console.log("RESPAWN");
+    // console.log("RESPAWN");
 
     //console.log(this);
   }
 
   onDeath() {
     //console.log("ON DEATH");
-
     this.state = STATES.DEAD;
     this.target = null;
     this.dead = true;
@@ -73,6 +72,7 @@ export default class ServerEnemy extends GameObject {
     this.target = gameObjects.filter(
       (p) =>
         p.type === GAME_UNIT_TYPES.PLAYER &&
+        !p.isGhost &&
         MATH_HELPERS.getDistanceVec2(p.pos, this.pos) < this.stats.aggroRange
     )[0];
 
@@ -82,6 +82,11 @@ export default class ServerEnemy extends GameObject {
   }
 
   moveTowardsTarget() {
+    if (this.target.isGhost) {
+      this.state = STATES.FIND_TARGET;
+      return;
+    }
+
     // Too far from home
     if (
       MATH_HELPERS.getDistanceVec2(this.start, this.pos) >
@@ -123,7 +128,8 @@ export default class ServerEnemy extends GameObject {
     this.vel.y -= Math.sin(angleRadians);
 
     if (
-      MATH_HELPERS.getDistanceVec2(this.start, this.pos) <= this.stats.moveSpeed * 2
+      MATH_HELPERS.getDistanceVec2(this.start, this.pos) <=
+      this.stats.moveSpeed * 2
     ) {
       this.pos.x = this.start.x;
       this.pos.y = this.start.y;
@@ -133,7 +139,7 @@ export default class ServerEnemy extends GameObject {
   }
 
   attack() {
-    if (this.target.dead) {
+    if (this.target.dead || this.target.isGhost) {
       this.state = STATES.MOVE_HOME;
       this.target = null;
       return;
@@ -181,7 +187,6 @@ export default class ServerEnemy extends GameObject {
           }
         );
       });
-
     }
   }
 }

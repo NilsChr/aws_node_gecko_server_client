@@ -1,26 +1,40 @@
 import { GO_ANIMATION_STATES } from "../../common/gameObject.js";
-import GAME_UNIT_TYPES from "../factories/gameUnitTypes.js";
-import ASSET_MANAGER from "../managers/assetManager.js";
+import GAME_UNIT_TYPES from "../../common/gameUnitTypes.js";
+import gameState from "../gameState.js";
+import ASSET_MANAGER, { ASSET_KEYS } from "../managers/assetsManager/assetManager.js";
 
 const GAME_UNIT_DATA = [];
 GAME_UNIT_DATA[GAME_UNIT_TYPES.PLAYER] = {
-  imgKey: 'units',
+  imgKey: ASSET_KEYS.UNITS,
   row: 1 * 32
 }
 GAME_UNIT_DATA[GAME_UNIT_TYPES.SKELETON_1] = {
-  imgKey: 'units',
+  imgKey: ASSET_KEYS.UNITS,
   row: 0 * 32
 }
 GAME_UNIT_DATA[GAME_UNIT_TYPES.BOSS] = {
-  imgKey: 'units',
+  imgKey: ASSET_KEYS.UNITS,
   row: 2 * 32
+}
+GAME_UNIT_DATA[GAME_UNIT_TYPES.GRAVEYARD_GRAVE] = {
+  imgKey: ASSET_KEYS.GRAVEYARD,
+  row: 0 * 32
+}
+GAME_UNIT_DATA[GAME_UNIT_TYPES.GRAVEYARD_ANGEL] = {
+  imgKey: ASSET_KEYS.GRAVEYARD,
+  row: 1 * 32
 }
 
 const GAME_OBJECT_RENDERER = {
   renderObject: function (p, obj) {
     let state = obj.animationState;
     let unitData = GAME_UNIT_DATA[obj.type];
+    p.push();
+    if(obj.id == gameState.myId && obj.isGhost) {
+      p.tint(255, 126);
+    }
     render(p,unitData.imgKey, obj,state, unitData.row);
+    p.pop();
   },
 };
 

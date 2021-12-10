@@ -1,13 +1,11 @@
 import p5 from "p5";
 import geckos from "@geckos.io/client";
 import gameState from "./gameState.js";
-
 import { SnapshotInterpolation } from "@geckos.io/snapshot-interpolation";
 import UNIT_FACTORY from "./factories/unitFactory.js";
 import INPUT from "./input.js";
-import ASSET_MANAGER from "./managers/assetManager.js";
+import ASSET_MANAGER from "./managers/assetsManager/assetManager.js";
 import GAME_OBJECT_RENDERER from "./systems/gameObjectRenderer.js";
-import GAME_UNIT_TYPES from "./factories/gameUnitTypes.js";
 import MATH_HELPERS from "../common/MathHelpers.js";
 import GAME_CONSTANS from "../common/gameConstants.js";
 import EVENTS_UDP from "../common/eventsUDP.js";
@@ -16,18 +14,17 @@ import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
-let url = 'http://70.34.203.138:3000'
-let url_test = 'http://localhost:3000'
+let url_prod = "http://70.34.203.138:3000";
+let url_test = "http://localhost:3000";
+let url = url_test;
 
-axios.get(url+"/getZones").then((d) => {
+axios.get(url + "/getZones").then((d) => {
   console.log(d.data);
   gameState.zones = d.data;
 });
 
 let sketch = function (p) {
-  let img = null;
-  let shadow = null;
-  let shadow_circle = null;
+  const cameraScale = 4;
 
   p.preload = function () {
     img = p.loadImage("assets/rpg_units.png");
@@ -93,18 +90,7 @@ let sketch = function (p) {
 
     let player = gameState.clientPlayerGameObject;
     if (!player) return;
-    
-    // GRASS 
-    /*
-    p.fill("#718C5C"); 
-    p.fill(gameState)
-    p.ellipse(
-      player.x,
-      player.y,
-      GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE * 2,
-      GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE * 2
-    );
-    */
+
     SI.snapshot.create(gameState.gameobjects);
 
     const snapshot = SI.calcInterpolation("x y");
@@ -113,15 +99,13 @@ let sketch = function (p) {
     const { state } = snapshot;
 
     p.push();
-    let scale = 4;
-    //p.translate(-(player.x * scale) - (p.width * scale / 2),-player.y*scale);
-    //p.translate(-(player.x * scale) ,-player.y*scale); // KORRECT
-    p.translate(-(player.x * scale) + p.width/2,-(player.y*scale) + p.height/2);
-    p.scale(scale,scale);
-
+    p.translate(
+      -(player.x * cameraScale) + p.width / 2,
+      -(player.y * cameraScale) + p.height / 2
+    );
+    p.scale(cameraScale, cameraScale);
 
     gameState.zones.forEach((z) => {
-      //console.log(z.dim);
       if (z.dim) {
         p.fill(z.color);
         p.text(z.title, z.pos.x, z.pos.y);
@@ -152,7 +136,6 @@ let sketch = function (p) {
       obj.update();
     }
     p.pop();
-
   };
 
   p.keyPressed = function (e) {
@@ -161,13 +144,12 @@ let sketch = function (p) {
       console.log();
     }
     if (e.key === "+") {
-      axios.get("http://localhost:3000/getState").then((d) => {
+      axios.get(url + "/getState").then((d) => {
         console.log(d);
       });
     }
-    console.log(e);
     if (e.key === "?") {
-      axios.get("http://localhost:3000/restart").then((d) => {
+      axios.get(url + "/restart").then((d) => {
         console.log(d);
         location.reload();
       });
@@ -186,6 +168,29 @@ let sketch = function (p) {
     if (e.key === INPUT.controls.MOVE_RIGHT) INPUT.input.MOVE_RIGHT = false;
     if (e.key === INPUT.controls.MOVE_UP) INPUT.input.MOVE_UP = false;
     if (e.key === INPUT.controls.MOVE_DOWN) INPUT.input.MOVE_DOWN = false;
+  };
+
+  p.mousePressed = function () {
+    console.log("clicked");
+    let mouse = {
+      player: {
+        x: gameState.clientPlayerGameObject.x,
+        y: gameState.clientPlayerGameObject.y,
+      },
+      screenPos: {
+        x: p.mouseX,
+        y: p.mouseY,
+      },
+      screenToWorldPos: {
+        x:
+          gameState.clientPlayerGameObject.x +
+          (p.mouseX - p.width / 2) / cameraScale,
+        y:
+          gameState.clientPlayerGameObject.y +
+          (p.mouseY - p.height / 2) / cameraScale,
+      },
+    };
+    console.log(mouse);
   };
 };
 

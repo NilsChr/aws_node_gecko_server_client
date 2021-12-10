@@ -1,7 +1,7 @@
 import gameState from "../gameState.js";
 import { ClientPlayer } from "../player/clientPlayer.js";
 import GameUnit from "./gameUnit.js";
-import GAME_UNIT_TYPES from "./gameUnitTypes.js";
+import GAME_UNIT_TYPES from "../../common/gameUnitTypes.js";
 
 const UNIT_FACTORY = {
   spawnUnit: function (unitBlueprint) {

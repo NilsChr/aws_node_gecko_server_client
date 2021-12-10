@@ -1,7 +1,7 @@
 import geckos from "@geckos.io/server";
 import { iceServers } from "@geckos.io/server";
 import { SnapshotInterpolation } from "@geckos.io/snapshot-interpolation";
-import GAME_UNIT_TYPES from "../../client/factories/gameUnitTypes.js";
+import GAME_UNIT_TYPES from "../../common/gameUnitTypes.js";
 import ServerEnemy from "./serverEnemy.js";
 import ServerPlayer from "./serverPlayer.js";
 import registerEvents from "./transportEvents/index.js";
