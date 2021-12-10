@@ -16,7 +16,7 @@ import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
-let url = '70.34.203.138:3000'
+let url = 'http://70.34.203.138:3000'
 let url_test = 'http://localhost:3000'
 
 axios.get(url+"/getZones").then((d) => {
