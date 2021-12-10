@@ -20,6 +20,8 @@ const UNIT_FACTORY = {
     }
 
     let gameObject = null;
+    gameObject = new GameUnit(id, x, y, unitBlueprint.type, a);
+    /*
     switch (unitBlueprint.type) {
       case GAME_UNIT_TYPES.PLAYER:
         gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.PLAYER, a);
@@ -31,6 +33,7 @@ const UNIT_FACTORY = {
         gameObject = new GameUnit(id, x, y, GAME_UNIT_TYPES.BOSS, a);
         break;
     }
+    */
     if (!gameObject) {
       console.warn("ENEMY TYPE NOT MAPPED IN FACTORY");
       return;

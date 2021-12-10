@@ -5,18 +5,20 @@ import GameObject, { GO_ANIMATION_STATES } from "../../common/gameObject.js";
 import MATH_HELPERS from "../../common/MathHelpers.js";
 import damageSystem from "./systems/damage.system.js";
 import DB from "../db/dbConnection.js";
+import { GAME_UNIT_CATEGORES } from "./factories/gameobject.factory.js";
 
 export default class ServerPlayer extends GameObject {
   constructor(game, channel, x, y, type) {
-    super(channel.id, x, y, type);
+    super(channel, x, y, type);
     this.game = game;
     this.channel = channel;
     this.target = null;
 
     this.stats.moveSpeed = 2;
     this.stats.hp = 20;
-    this.isGhost = false;
+   // this.isGhost = false;
     this.currentZone = -1;
+    this.grave = null;
   }
 
   handleInput(input) {
@@ -28,24 +30,44 @@ export default class ServerPlayer extends GameObject {
 
   onDeath() {
     this.isGhost = true;
+   // this.dead = true;
     console.log("PLAYER IS GHOST");
 
     let zone = DB.cache.zones_map[this.currentZone];
     console.log(zone);
+    // Add grave
+    let grave = this.game.objFactory.createObject(
+      GAME_UNIT_CATEGORES.STATIC,
+      GAME_UNIT_TYPES.GRAVEYARD_GRAVE,
+      this.pos.x,
+      this.pos.y
+    );
+    this.game.addGameObject(grave);
+    this.grave = grave;
+
     // Move to zone graveyard
     this.pos = DB.cache.zones_map[this.currentZone].pos.copy();
     console.log(this.pos);
-    this.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id,  { reliable: true });
+
+
+    this.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
+      reliable: true,
+    });
+
+    this.game.getPlayersWithinRange(this,  GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE).forEach(p => {
+      p.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
+        reliable: true,
+      });
+    })
     
-    // Add grave
-
     // TODO: Change this
-
   }
 
   setZone(zone) {
     this.currentZone = zone.id;
-    this.channel.emit(EVENTS_UDP.fromServer.enteredNewZone, zone,  { reliable: true });
+    this.channel.emit(EVENTS_UDP.fromServer.enteredNewZone, zone, {
+      reliable: true,
+    });
   }
 
   useSkill(skill_no) {

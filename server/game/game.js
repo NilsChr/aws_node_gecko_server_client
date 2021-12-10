@@ -9,6 +9,9 @@ import MathHelpers from "../../common/MathHelpers.js";
 import GAME_CONSTANS from "../../common/gameConstants.js";
 import EVENTS_UDP from "../../common/eventsUDP.js";
 import DB from "../db/dbConnection.js";
+import FACTORY_GAMEOBJECT, {
+  GAME_UNIT_CATEGORES,
+} from "./factories/gameobject.factory.js";
 
 export class Game {
   running = false;
@@ -18,28 +21,39 @@ export class Game {
   players = [];
   channels = [];
   SIVaults = [];
+  objFactory = null;
 
   constructor(server) {
     this.io = server;
     this.init(server);
+    this.objFactory = new FACTORY_GAMEOBJECT(this);
 
     for (let i = 0; i < 5; i++) {
-      let testSkeleton = new ServerEnemy(
-        this,
-        i,
+      let obj = this.objFactory.createObject(
+        GAME_UNIT_CATEGORES.ENEMY,
+        GAME_UNIT_TYPES.SKELETON_1,
         100 + i * 15,
-        80 + i * 13,
-        GAME_UNIT_TYPES.SKELETON_1
+        80 + i * 13
       );
-      this.gameobjects.push(testSkeleton);
+      this.addGameObject(obj);
     }
 
-    let boss = new ServerEnemy(this, 666, 240, 300, GAME_UNIT_TYPES.BOSS);
-    boss.stats.moveSpeed = 1.69;
-    boss.stats.attackSpeed = 400;
-    boss.stats.aggroRange = 100;
-    boss.stats.power = 2;
-    this.gameobjects.push(boss);
+    let boss = this.objFactory.createObject(
+      GAME_UNIT_CATEGORES.ENEMY,
+      GAME_UNIT_TYPES.BOSS,
+      240,
+      300
+    );
+    this.addGameObject(boss);
+
+    let angel = this.objFactory.createObject(
+      GAME_UNIT_CATEGORES.STATIC,
+      GAME_UNIT_TYPES.GRAVEYARD_ANGEL,
+      250,
+      20
+    );
+    angel.animationState = 1;
+    this.addGameObject(angel);
   }
 
   destroy() {
@@ -64,36 +78,48 @@ export class Game {
 
     this.io.onConnection((channel) => {
       this.channels.push(channel);
-      let newPlayer = new ServerPlayer(
-        this,
-        channel,
+
+      let newPlayer = this.objFactory.createObject(
+        GAME_UNIT_CATEGORES.PLAYER,
+        GAME_UNIT_TYPES.PLAYER,
         220,
-        20,
-        GAME_UNIT_TYPES.PLAYER
+        20
       );
+      //console.log(newPlayer);
+      newPlayer.id = channel.id;
+      newPlayer.channel = channel;
 
       this.gameobjects.push(newPlayer);
       this.players[channel.id] = newPlayer;
-      this.SIVaults[channel.id] = new SnapshotInterpolation();
+      this.SIVaults[channel.id] = new SnapshotInterpolation(25);
 
       let withinRange = this.getGameObjectsWithinRange(
         newPlayer,
         GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
       ).map((p) => p.parseForTransfer());
 
-      channel.room.emit(EVENTS_UDP.fromServer.playerJoined, withinRange);
+      channel.room.emit(EVENTS_UDP.fromServer.playerJoined, withinRange, {
+        reliable: true,
+      });
 
       registerEvents(channel, this);
 
       channel.onDisconnect(() => {
         console.log("Disconnect user " + channel.id);
+        channel.room.emit(
+          EVENTS_UDP.fromServer.removePlayer,
+          { id: channel.id },
+          { reliable: true }
+        );
         this.removeGameObject(channel.id);
-        channel.room.emit(EVENTS_UDP.fromServer.removePlayer, channel.playerId);
+
         this.channels.splice(this.channels.indexOf(channel.id), 1);
-        this.SIVaults.splice(this.SIVaults.indexOf(channel.id), 1);
-        console.log(this.gameobjects.length);
-        console.log(this.channels);
-        console.log(this.SIVaults);
+        delete this.SIVaults[channel.id];
+
+        //this.SIVaults.splice(this.SIVaults.indexOf(channel.id), 1);
+        //console.log(this.gameobjects.length);
+        //console.log(this.channels);
+        //console.log(this.SIVaults);
       });
 
       channel.emit(EVENTS_UDP.fromServer.ready);
@@ -102,7 +128,7 @@ export class Game {
 
   start() {
     this.running = true;
-    if(this.loop != null || this.loopSlow != null) return;
+    if (this.loop != null || this.loopSlow != null) return;
     this.loop = setInterval(
       function () {
         this.update();
@@ -142,7 +168,9 @@ export class Game {
             p.pos.y
           ) < GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
       );
-      const snapshot = this.SIVaults[channel.id].snapshot.create(
+      const vault = this.SIVaults[channel.id];
+      if (!vault) continue;
+      const snapshot = vault.snapshot.create(
         gameObjectsWithinRange.map((p) => p.parseForTransfer())
       );
       this.SIVaults[channel.id].vault.add(snapshot);
@@ -164,6 +192,10 @@ export class Game {
           }
         }
       });
+  }
+
+  addGameObject(obj) {
+    this.gameobjects.push(obj);
   }
 
   removeGameObject(id) {

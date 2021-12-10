@@ -22,7 +22,7 @@ GAME_UNIT_DATA[GAME_UNIT_TYPES.GRAVEYARD_GRAVE] = {
 }
 GAME_UNIT_DATA[GAME_UNIT_TYPES.GRAVEYARD_ANGEL] = {
   imgKey: ASSET_KEYS.GRAVEYARD,
-  row: 1 * 32
+  row: 0 * 32
 }
 
 const GAME_OBJECT_RENDERER = {
@@ -30,10 +30,12 @@ const GAME_OBJECT_RENDERER = {
     let state = obj.animationState;
     let unitData = GAME_UNIT_DATA[obj.type];
     p.push();
-    if(obj.id == gameState.myId && obj.isGhost) {
+    if(obj.isGhost && obj.id === gameState.myId) {
       p.tint(255, 126);
+      render(p,unitData.imgKey, obj,state, unitData.row);
+    } else if(!obj.isGhost){
+      render(p,unitData.imgKey, obj,state, unitData.row);
     }
-    render(p,unitData.imgKey, obj,state, unitData.row);
     p.pop();
   },
 };
@@ -43,7 +45,12 @@ function render(p, imgKey,obj, state,unitRow) {
   //let dir = obj.x < obj.dx ? -1 : 1;
   p.translate(obj.x, obj.y);
   p.scale(obj.dir,1);
-  p.image(ASSET_MANAGER.getAsset(imgKey), 0,0, 32,32, 32* state, unitRow, 32,32);
+  let img = ASSET_MANAGER.getAsset(imgKey);
+  //if(obj.type == 5)
+ // console.log(imgKey);
+  // p.rect(0,0,32,32);
+
+  p.image(img, 0,0, 32,32, 32* state, unitRow, 32,32);
   //p.image(ASSET_MANAGER.getAsset(imgKey), obj.x, obj.y, 32,32, 32* state, unitRow, 32,32);
   p.pop();
 }

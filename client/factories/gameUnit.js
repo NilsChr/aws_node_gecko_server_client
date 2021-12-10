@@ -8,6 +8,7 @@ export default class GameUnit {
     this.dx = x;
     this.dy = y;
     this.dir = 1;
+    this.dead = false;
   }
 
   update() {

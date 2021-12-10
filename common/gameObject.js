@@ -36,6 +36,7 @@ export default class GameObject {
     this.lastAttack  = -1;
     this.stats = new GameUnitStats();
     this.dead = false;
+    this.isGhost = false;
   }
 
   tick(gameobjects) {
@@ -65,7 +66,9 @@ export default class GameObject {
       x: this.pos.x,
       y: this.pos.y,
       type: this.type,
-      animationState: this.animationState
+      animationState: this.animationState,
+      dead: this.dead,
+      isGhost: this.isGhost
     };
   }
 

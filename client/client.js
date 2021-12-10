@@ -4,7 +4,9 @@ import gameState from "./gameState.js";
 import { SnapshotInterpolation } from "@geckos.io/snapshot-interpolation";
 import UNIT_FACTORY from "./factories/unitFactory.js";
 import INPUT from "./input.js";
-import ASSET_MANAGER from "./managers/assetsManager/assetManager.js";
+import ASSET_MANAGER, {
+  ASSET_KEYS,
+} from "./managers/assetsManager/assetManager.js";
 import GAME_OBJECT_RENDERER from "./systems/gameObjectRenderer.js";
 import MATH_HELPERS from "../common/MathHelpers.js";
 import GAME_CONSTANS from "../common/gameConstants.js";
@@ -24,11 +26,11 @@ axios.get(url + "/getZones").then((d) => {
 });
 
 let sketch = function (p) {
-  const cameraScale = 4;
+  const cameraScale = 2;
 
   p.preload = function () {
-    img = p.loadImage("assets/rpg_units.png");
-    ASSET_MANAGER.loadAsset(p, "units", "./assets/rpg_units4.png");
+    ASSET_MANAGER.loadAsset(p, ASSET_KEYS.UNITS, "./assets/rpg_units4.png");
+    ASSET_MANAGER.loadAsset(p, ASSET_KEYS.GRAVEYARD, "./assets/graveyard.png");
   };
 
   p.setup = function () {
@@ -65,9 +67,15 @@ let sketch = function (p) {
         data.forEach((newObj) => {
           let obj = go.filter((g) => g != null && g.id === newObj.id)[0];
           if (!obj) {
+            console.log('spawning', newObj);
             UNIT_FACTORY.spawnUnit(newObj);
           }
         });
+      });
+
+      channel.on(EVENTS_UDP.fromServer.removePlayer, (data) => {
+        console.log("Remove player", data);
+        gameState.removeGameObject(data.id);
       });
 
       channel.on(EVENTS_UDP.fromServer.unitUseSkill, (data) => {
@@ -94,9 +102,16 @@ let sketch = function (p) {
     SI.snapshot.create(gameState.gameobjects);
 
     const snapshot = SI.calcInterpolation("x y");
-    if (!snapshot) return;
+//    console.log("snapshot", snapshot != null);
 
-    const { state } = snapshot;
+    if (!snapshot) {
+      return;
+    }
+    // if (!snapshot) return;
+
+    //let { state } = snapshot;
+    let state = [];
+    if (snapshot) state = snapshot.state;
 
     p.push();
     p.translate(
@@ -113,8 +128,11 @@ let sketch = function (p) {
       }
     });
 
+    //gameState.gameobjects = gameState.gameobjects.sort((a,b) => a.y - b.y);
+    state = state.sort((a, b) => a.y - b.y);
+
     for (let i = 0; i < state.length; i++) {
-      const { id, x, y, animationState } = state[i];
+      const { id, x, y, animationState, isGhost } = state[i];
       let obj = gameState.gameobjects.find((p) => p.id === id);
       if (!obj) {
         //console.log('no obj', id)
@@ -131,11 +149,14 @@ let sketch = function (p) {
       //obj.setAnimationState(animationState);
       obj.x = x;
       obj.y = y;
+      obj.isGhost = isGhost;
 
       GAME_OBJECT_RENDERER.renderObject(p, obj);
       obj.update();
     }
     p.pop();
+
+    p.image(ASSET_MANAGER.getAsset(ASSET_KEYS.GRAVEYARD), 20, 20);
   };
 
   p.keyPressed = function (e) {
