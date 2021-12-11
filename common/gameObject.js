@@ -1,3 +1,4 @@
+import EVENTS_UDP from "./eventsUDP.js";
 import vec2 from "./vec2.js";
 
 export const GO_ANIMATION_STATES = {
@@ -24,7 +25,8 @@ export class GameUnitStats {
 }
 
 export default class GameObject {
-  constructor(id, x, y, type) {
+  constructor(game,id, x, y, type) {
+    this.game = game;
     this.id = id;
     this.title = 'no title';
     this.pos = new vec2(x, y);
@@ -72,5 +74,7 @@ export default class GameObject {
     };
   }
 
-  onDeath() {}
+  onDeath() {
+    this.game.emitToClientsWithinRange(this,EVENTS_UDP.fromServer.playerDied, this.id);
+  }
 }

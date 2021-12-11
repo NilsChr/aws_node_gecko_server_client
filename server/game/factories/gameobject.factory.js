@@ -36,10 +36,13 @@ export default class FACTORY_GAMEOBJECT {
   }
 
   createPlayerCategory(type, x, y) {
+   // let player = null
     switch (type) {
       case GAME_UNIT_TYPES.PLAYER:
         return new ServerPlayer(this.game, null, x, y, type);
     }
+   // player.stats.maxHp = 20;
+   // return player;
   }
 
   createEnemyCategory(type, x, y) {
@@ -57,6 +60,6 @@ export default class FACTORY_GAMEOBJECT {
   }
 
   createStaticCategory(type, x, y) {
-    return new ServerStatic(this, this.id++, x, y, type);
+    return new ServerStatic(this.game, this.id++, x, y, type);
   }
 }

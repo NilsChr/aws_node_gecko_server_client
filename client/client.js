@@ -20,7 +20,7 @@ const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let url_prod = "http://70.34.203.138:3000";
 let url_test = "http://localhost:3000";
-let url = process.env.NODE_ENV === 'development' ? url_test : url_prod;
+let url = process.env.NODE_ENV === "development" ? url_test : url_prod;
 gameState.SERVER_URL = url;
 console.log(`Connecting to ${url}`);
 
@@ -30,7 +30,7 @@ axios.get(url + "/getZones").then((d) => {
 });
 
 let sketch = function (p) {
-  const cameraScale = 4;
+  const cameraScale = 2;
 
   p.preload = function () {
     ASSET_MANAGER.loadAsset(p, ASSET_KEYS.UNITS, "./assets/rpg_units4.png");
@@ -68,7 +68,6 @@ let sketch = function (p) {
       });
 
       channel.on(EVENTS_UDP.fromServer.playerJoined, (data) => {
-        //console.log("player joined!", data);
         let go = gameState.gameobjects;
         data.forEach((newObj) => {
           let obj = go.filter((g) => g != null && g.id === newObj.id)[0];
@@ -146,7 +145,6 @@ let sketch = function (p) {
       const { id, x, y, animationState, isGhost, hp, maxhp } = state[i];
       let obj = gameState.gameobjects.find((p) => p.id === id);
       if (!obj) {
-        //console.log('no obj', id)
         continue;
       }
       if (obj.id === gameState.myId) {
@@ -157,7 +155,6 @@ let sketch = function (p) {
           gameState.gameobjects.splice(gameState.gameobjects.indexOf(obj), 1);
         }
       }
-      //obj.setAnimationState(animationState);
       obj.x = x;
       obj.y = y;
       obj.isGhost = isGhost;
@@ -168,27 +165,20 @@ let sketch = function (p) {
       obj.update();
     }
 
-
-
     p.pop();
-    
+
     p.push();
     p.translate(
       -(player.x * cameraScale) + p.width / 2,
       -(player.y * cameraScale) + p.height / 2
     );
     p.scale(cameraScale, cameraScale);
-    gameState.gameobjects.filter(o => o.title != '' && !o.isGhost).forEach(o => {
-      NAME_PLATE_RENDERER.renderNameplate(p, o);
-    })
+    gameState.gameobjects
+      .filter((o) => o.title != "" && (!o.isGhost || o.dead))
+      .forEach((o) => {
+        NAME_PLATE_RENDERER.renderNameplate(p, o);
+      });
     p.pop();
-    /*
-    if (gameState.clientPlayerGameObject.isGhost) {
-      //p.filter(p.GRAY);
-      p.fill(0, 0, 0, 150);
-      p.rect(0, 0, p.width, p.height);
-    }
-    */
   };
 
   p.keyPressed = function (e) {
@@ -243,10 +233,10 @@ let sketch = function (p) {
           (p.mouseY - p.height / 2) / cameraScale,
       },
       worldToScreenPos: {
-        x: gameState.clientPlayerGameObject.x * cameraScale - ( p.width / 2),
-        y: gameState.clientPlayerGameObject.y * cameraScale - ( p.height / 2)
+        x: gameState.clientPlayerGameObject.x * cameraScale - p.width / 2,
+        y: gameState.clientPlayerGameObject.y * cameraScale - p.height / 2,
         //(p.mouseX - p.width / 2) / cameraScale,
-      }
+      },
     };
     console.log(mouse);
   };

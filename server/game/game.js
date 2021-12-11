@@ -46,7 +46,6 @@ export class Game {
     );
     this.addGameObject(boss);
 
-    
     /*
     let angel = this.objFactory.createObject(
       GAME_UNIT_CATEGORES.STATIC,
@@ -109,7 +108,9 @@ export class Game {
 
       channel.onDisconnect(() => {
         console.log("Disconnect user " + channel.id);
-        this.gameobjects.filter(o => o.target && o.target.id == channel.id).forEach(o => o.target = null);
+        this.gameobjects
+          .filter((o) => o.target && o.target.id == channel.id)
+          .forEach((o) => (o.target = null));
         channel.room.emit(
           EVENTS_UDP.fromServer.removePlayer,
           { id: channel.id },
@@ -131,10 +132,9 @@ export class Game {
   }
 
   start() {
-
-    DB.cache.zones.forEach(z => {
+    DB.cache.zones.forEach((z) => {
       console.log(z);
-      if(z.graveyard.x !== -1) {
+      if (z.graveyard.x !== -1) {
         let angel = this.objFactory.createObject(
           GAME_UNIT_CATEGORES.STATIC,
           GAME_UNIT_TYPES.GRAVEYARD_ANGEL,
@@ -144,9 +144,7 @@ export class Game {
         angel.animationState = 1;
         this.addGameObject(angel);
       }
-
-    })
-
+    });
 
     this.running = true;
     if (this.loop != null || this.loopSlow != null) return;
@@ -241,6 +239,13 @@ export class Game {
         MathHelpers.getDistance(player.pos.x, player.pos.y, p.pos.x, p.pos.y) <
           range
     );
+  }
+
+  emitToClientsWithinRange(obj, event, data) {
+    let clients = this.getPlayersWithinRange(obj, GAME_CONSTANS.PLAYER_DESTROY_NOT_SEEN_ENEMIES_DISTANCE);
+    for (let i = 0; i < clients.length; i++) {
+      clients[i].channel.emit(event, data, { reliable: true });
+    }
   }
 
   logState() {

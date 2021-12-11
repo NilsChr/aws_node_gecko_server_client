@@ -16,13 +16,13 @@ const STATES = {
 
 export default class ServerEnemy extends GameObject {
   constructor(game, id, x, y, type) {
-    super(id, x, y, type);
-    this.game = game;
+    super(game,id, x, y, type);
+    //this.game = game;
     this.state = STATES.FIND_TARGET;
     this.start = this.pos.copy();
     this.target = null;
-    this.despawnTimer = 1000;
-    this.respawnTimer = 1000;
+    this.despawnTimer = 5000;
+    this.respawnTimer = 2000;
   }
 
   update(gameObjects) {
@@ -49,17 +49,21 @@ export default class ServerEnemy extends GameObject {
     this.pos = this.start.copy();
     this.state = STATES.FIND_TARGET;
     this.dead = false;
-    // console.log("RESPAWN");
-
-    //console.log(this);
   }
 
   onDeath() {
-    //console.log("ON DEATH");
     this.state = STATES.DEAD;
     this.target = null;
     this.dead = true;
     let that = this;
+
+    this.game.emitToClientsWithinRange(this,EVENTS_UDP.fromServer.playerDied, this.id);
+    /*
+    this.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
+      reliable: true,
+    });
+    */
+    this.game.e
     setTimeout(function () {
       that.state = STATES.DESPAWNED;
       //that.stats.reset();
@@ -140,11 +144,17 @@ export default class ServerEnemy extends GameObject {
   }
 
   attack() {
+    if (this.target.dead || this.target.isGhost) {
+      this.state = STATES.FIND_TARGET;
+      this.target = null;
+      return;
+    }
     if (!this.target ||this.target.dead || this.target.isGhost) {
       this.state = STATES.MOVE_HOME;
       this.target = null;
       return;
     }
+
     if (
       MATH_HELPERS.getDistanceVec2(this.target.pos, this.pos) >
       this.stats.attackRange

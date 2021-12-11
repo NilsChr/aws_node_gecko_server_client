@@ -10,13 +10,13 @@ import { SKILL_ACTIONS } from "./skills/skillActions.js";
 
 export default class ServerPlayer extends GameObject {
   constructor(game, channel, x, y, type) {
-    super(channel, x, y, type);
-    this.game = game;
+    super(game,channel, x, y, type);
+   // this.game = game;
     this.channel = channel;
     this.target = null;
 
     this.stats.moveSpeed = 2;
-    this.stats.hp = 20;
+    this.stats.maxHp = 20;
     // this.isGhost = false;
     this.currentZone = -1;
     this.grave = null;
@@ -32,11 +32,7 @@ export default class ServerPlayer extends GameObject {
 
   onDeath() {
     this.isGhost = true;
-    // this.dead = true;
-    console.log("PLAYER IS GHOST");
-
-    let zone = DB.cache.zones_map[this.currentZone];
-    console.log(zone);
+    
     // Add grave
     let grave = this.game.objFactory.createObject(
       GAME_UNIT_CATEGORES.STATIC,
@@ -44,13 +40,13 @@ export default class ServerPlayer extends GameObject {
       this.pos.x,
       this.pos.y
     );
+    grave.title = this.title + '\'s grave'
     this.game.addGameObject(grave);
     this.grave = grave;
 
     // Move to zone graveyard
     this.pos = DB.cache.zones_map[this.currentZone].graveyard.copy();
     this.pos.y += 10;
-    console.log(this.pos);
 
     this.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
       reliable: true,
@@ -70,6 +66,7 @@ export default class ServerPlayer extends GameObject {
 
   graveRes() {
     this.isGhost = false;
+    this.grave.onDeath();
     this.game.removeGameObject(this.grave.id);
     this.grave = null;
     this.stats.hp = this.stats.maxHp / 2;
