@@ -19,7 +19,7 @@ const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let url_prod = "http://70.34.203.138:3000";
 let url_test = "http://localhost:3000";
-let url = url_test;
+let url = url_prod;
 
 axios.get(url + "/getZones").then((d) => {
   console.log(d.data);
