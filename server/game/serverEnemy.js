@@ -139,7 +139,7 @@ export default class ServerEnemy extends GameObject {
   }
 
   attack() {
-    if (this.target.dead || this.target.isGhost) {
+    if (!this.target ||this.target.dead || this.target.isGhost) {
       this.state = STATES.MOVE_HOME;
       this.target = null;
       return;

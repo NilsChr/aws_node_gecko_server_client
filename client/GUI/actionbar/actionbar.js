@@ -15,8 +15,16 @@ const ACTION_BAR = {
         if(skill) {
             let title = document.createElement("label")
             title.innerHTML = skill.title;
+            title.classList.add('actionbar-title');
             title.style = "font-size: 12px; font-family: sans-serif;";
             btn.appendChild(title);
+
+            
+            let key = document.createElement("label")
+            key.classList.add('actionbar-key');
+            key.innerHTML = (i+1);
+            btn.appendChild(key);
+            
 
         }
         //console.log(SKILLS[actionbar[i]])
