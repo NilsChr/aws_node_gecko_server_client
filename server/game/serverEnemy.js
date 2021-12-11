@@ -62,6 +62,7 @@ export default class ServerEnemy extends GameObject {
     let that = this;
     setTimeout(function () {
       that.state = STATES.DESPAWNED;
+      //that.stats.reset();
       setTimeout(function () {
         that.respawn();
       }, that.respawnTimer);

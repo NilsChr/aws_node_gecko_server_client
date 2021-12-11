@@ -178,7 +178,7 @@ let sketch = function (p) {
       -(player.y * cameraScale) + p.height / 2
     );
     p.scale(cameraScale, cameraScale);
-    gameState.gameobjects.filter(o => o.title != '').forEach(o => {
+    gameState.gameobjects.filter(o => o.title != '' && !o.isGhost).forEach(o => {
       NAME_PLATE_RENDERER.renderNameplate(p, o);
     })
     p.pop();
