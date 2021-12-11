@@ -34,6 +34,12 @@ let dim = 200; //400;
 let i = 0;
 do {
   //console.log(i, input[i], mode);
+  if (input[i] == "dim") {
+    //mode = modes.BUILD_POS;
+    //console.log("Bulding pos");
+    dim = input[i+1];
+    continue;
+  }
   if (input[i] == "layout") {
     mode = modes.BUILD_POS;
     console.log("Bulding pos");
@@ -50,7 +56,7 @@ do {
       buildPos(input[i]);
       break;
     case modes.MAP_POS:
-      mapTitle(input[i]);
+      mapData(input[i]);
       break;
   }
   //console.log(input[i]);
@@ -66,6 +72,8 @@ function buildPos(row) {
       x: px * dim,
       y: py * dim,
       dim: dim,
+      gy_x: -1,
+      gy_y: -1
     };
     map_positions.push(z);
     px++;
@@ -74,12 +82,14 @@ function buildPos(row) {
   px = 0;
 }
 
-function mapTitle(row) {
+function mapData(row) {
   let r = row.split(" ");
   let m = map_positions.filter((z) => z.id == r[0])[0];
   if (!m) return;
   m.title = r[1];
   m.color = stringToColour(m.title);
+  m.gy_x = r[2],
+  m.gy_y = r[3]
 }
 
 let complete = 0;

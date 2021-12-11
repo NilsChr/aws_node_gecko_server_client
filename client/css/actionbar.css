@@ -1,0 +1,69 @@
+
+:root {
+  --cooldown-1: 4s;
+  --cooldown-2: 4s;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.isDead {
+  filter: grayscale(1);
+}
+
+#actionbar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
+  height: 85px;
+  background-color: rgb(79, 79, 79);
+  transform: translate(-50%, 0);
+  display: flex;
+  flex-wrap: nowrap;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+  border: 1px solid black;
+}
+
+#actionbar > div {
+  background-color: rgb(46, 46, 46);
+  width: 100px;
+  margin: 10px;
+  text-align: center;
+  line-height: 75px;
+  font-size: 30px;
+  position: relative;
+}
+
+.cooldown-1 {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: blue;
+  animation: slidein var(--cooldown-1) linear forwards;
+}
+
+.cooldown-2 {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: blue;
+  animation: slidein var(--cooldown-2) linear forwards;
+}
+
+@keyframes slidein {
+  from {
+    height: 100%;
+  }
+  to {
+    height: 0%;
+  }
+}

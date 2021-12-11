@@ -6,6 +6,7 @@ import MATH_HELPERS from "../../common/MathHelpers.js";
 import damageSystem from "./systems/damage.system.js";
 import DB from "../db/dbConnection.js";
 import { GAME_UNIT_CATEGORES } from "./factories/gameobject.factory.js";
+import { SKILL_ACTIONS } from "./skills/skillActions.js";
 
 export default class ServerPlayer extends GameObject {
   constructor(game, channel, x, y, type) {
@@ -16,9 +17,10 @@ export default class ServerPlayer extends GameObject {
 
     this.stats.moveSpeed = 2;
     this.stats.hp = 20;
-   // this.isGhost = false;
+    // this.isGhost = false;
     this.currentZone = -1;
     this.grave = null;
+    this.usedSkills = [];
   }
 
   handleInput(input) {
@@ -30,7 +32,7 @@ export default class ServerPlayer extends GameObject {
 
   onDeath() {
     this.isGhost = true;
-   // this.dead = true;
+    // this.dead = true;
     console.log("PLAYER IS GHOST");
 
     let zone = DB.cache.zones_map[this.currentZone];
@@ -46,21 +48,31 @@ export default class ServerPlayer extends GameObject {
     this.grave = grave;
 
     // Move to zone graveyard
-    this.pos = DB.cache.zones_map[this.currentZone].pos.copy();
+    this.pos = DB.cache.zones_map[this.currentZone].graveyard.copy();
+    this.pos.y += 10;
     console.log(this.pos);
-
 
     this.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
       reliable: true,
     });
 
-    this.game.getPlayersWithinRange(this,  GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE).forEach(p => {
-      p.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
-        reliable: true,
+    this.game
+      .getPlayersWithinRange(
+        this,
+        GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
+      )
+      .forEach((p) => {
+        p.channel.emit(EVENTS_UDP.fromServer.playerDied, this.id, {
+          reliable: true,
+        });
       });
-    })
-    
-    // TODO: Change this
+  }
+
+  graveRes() {
+    this.isGhost = false;
+    this.game.removeGameObject(this.grave.id);
+    this.grave = null;
+    this.stats.hp = this.stats.maxHp / 2;
   }
 
   setZone(zone) {
@@ -70,7 +82,29 @@ export default class ServerPlayer extends GameObject {
     });
   }
 
-  useSkill(skill_no) {
+  useSkill(skill) {
+    let usedSkill = this.usedSkills.find((s) => s.id == skill.id);
+    if (!usedSkill) {
+      console.log(`Use skill ${skill.title}`);
+      let use = {
+        used: performance.now(),
+        id: skill.id,
+        cooldown: skill.cooldown,
+      };
+      this.usedSkills.push(use);
+
+      SKILL_ACTIONS[skill.id](this.game, this);
+
+      setTimeout(
+        function () {
+          this.usedSkills.splice(this.usedSkills.indexOf(use), 1);
+        }.bind(this),
+        skill.cooldown
+      );
+    }
+  }
+
+  useSkill_(skill_no) {
     let now = performance.now();
     let diff = now - this.lastAttack;
 
@@ -91,7 +125,6 @@ export default class ServerPlayer extends GameObject {
         this,
         GAME_CONSTANS.PLAYER_INCLUDE_ENEMIES_DISTANCE
       );
-
       withinRange.forEach((e) => {
         e.channel.emit(
           EVENTS_UDP.fromServer.unitUseSkill,

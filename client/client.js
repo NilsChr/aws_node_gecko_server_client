@@ -14,6 +14,7 @@ import EVENTS_UDP from "../common/eventsUDP.js";
 import { GO_ANIMATION_STATES } from "../common/gameObject.js";
 import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
+import ACTION_BAR from "./GUI/actionbar/actionbar.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let url_prod = "http://70.34.203.138:3000";
@@ -26,7 +27,7 @@ axios.get(url + "/getZones").then((d) => {
 });
 
 let sketch = function (p) {
-  const cameraScale = 2;
+  const cameraScale = 4;
 
   p.preload = function () {
     ASSET_MANAGER.loadAsset(p, ASSET_KEYS.UNITS, "./assets/rpg_units4.png");
@@ -34,7 +35,9 @@ let sketch = function (p) {
   };
 
   p.setup = function () {
-    p.createCanvas(window.innerWidth, window.innerHeight);
+    let can = p.createCanvas(window.innerWidth, window.innerHeight);
+    can.parent("game");
+    p.drawingContext.blur = 10;
     p.noSmooth();
 
     let channel = geckos({ port: 3000 });
@@ -62,12 +65,11 @@ let sketch = function (p) {
       });
 
       channel.on(EVENTS_UDP.fromServer.playerJoined, (data) => {
-        console.log("player joined!", data);
+        //console.log("player joined!", data);
         let go = gameState.gameobjects;
         data.forEach((newObj) => {
           let obj = go.filter((g) => g != null && g.id === newObj.id)[0];
           if (!obj) {
-            console.log('spawning', newObj);
             UNIT_FACTORY.spawnUnit(newObj);
           }
         });
@@ -79,6 +81,10 @@ let sketch = function (p) {
       });
 
       channel.on(EVENTS_UDP.fromServer.unitUseSkill, (data) => {
+        //console.log("UNIT USED skill, ", data);
+        if (data.attackerId == gameState.myId) {
+          ACTION_BAR.triggerCooldown(data);
+        }
         let unit = gameState.gameobjects.find((o) => o.id == data.attackerId);
         unit.setAnimationState(1);
         setTimeout(() => {
@@ -94,6 +100,8 @@ let sketch = function (p) {
     frameCount++;
     p.background(0);
 
+    if (gameState.zones.length == 0) return;
+
     if (gameState.myId == null) return;
 
     let player = gameState.clientPlayerGameObject;
@@ -102,7 +110,7 @@ let sketch = function (p) {
     SI.snapshot.create(gameState.gameobjects);
 
     const snapshot = SI.calcInterpolation("x y");
-//    console.log("snapshot", snapshot != null);
+    //    console.log("snapshot", snapshot != null);
 
     if (!snapshot) {
       return;
@@ -156,7 +164,11 @@ let sketch = function (p) {
     }
     p.pop();
 
-    p.image(ASSET_MANAGER.getAsset(ASSET_KEYS.GRAVEYARD), 20, 20);
+    if (gameState.clientPlayerGameObject.isGhost) {
+      //p.filter(p.GRAY);
+      p.fill(0, 0, 0, 150);
+      p.rect(0, 0, p.width, p.height);
+    }
   };
 
   p.keyPressed = function (e) {

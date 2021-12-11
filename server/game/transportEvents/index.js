@@ -5,7 +5,7 @@ export default function registerEvents(channel, game) {
     game.players[channel.id].handleInput(data);
   });
   channel.on(EVENTS_UDP.fromClient.playerUseSkill, (data) => {
-    console.log(EVENTS_UDP.fromClient.playerUseSkill, data);
+    //console.log(EVENTS_UDP.fromClient.playerUseSkill, data);
     game.players[channel.id].useSkill(data);
   });
 }

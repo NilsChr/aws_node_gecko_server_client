@@ -12,7 +12,16 @@ export default class GameUnit {
   }
 
   update() {
-    if(this.dx != this.x) {
+    this.setDirection();
+
+    this.triggeredUpdate();
+
+  }
+  triggeredUpdate() {}
+
+
+  setDirection() {
+    if (this.dx != this.x) {
       this.dir = this.x < this.dx ? -1 : 1;
     }
     this.dx = this.x;

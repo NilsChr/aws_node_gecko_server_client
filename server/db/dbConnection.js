@@ -26,7 +26,9 @@ const DB = {
         z.pos_x,
         z.pos_y,
         z.dim_x,
-        z.dim_y
+        z.dim_y,
+        z.gy_x,
+        z.gy_y
       );
       this.cache.zones.push(zone);
       this.cache.zones_map[zone.id] = zone;
@@ -40,10 +42,10 @@ const DB = {
   zones: {
     uploadZone: async function (zone) {
       try {
-        const { title, color, x, y, dim } = zone;
+        const { title, color, x, y, dim, gy_x, gy_y } = zone;
         let res = await pool.query(
-          "INSERT INTO zones (title, color_hex, pos_x, pos_y, dim_x, dim_y) VALUES ($1, $2, $3, $4, $5, $6)",
-          [title, color, x, y, dim, dim]
+          "INSERT INTO zones (title, color_hex, pos_x, pos_y, dim_x, dim_y, gy_x, gy_y) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+          [title, color, x, y, dim, dim, gy_x, gy_y]
         );
         //console.log(res);
       } catch (e) {

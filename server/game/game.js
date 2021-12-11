@@ -46,6 +46,8 @@ export class Game {
     );
     this.addGameObject(boss);
 
+    
+    /*
     let angel = this.objFactory.createObject(
       GAME_UNIT_CATEGORES.STATIC,
       GAME_UNIT_TYPES.GRAVEYARD_ANGEL,
@@ -54,6 +56,7 @@ export class Game {
     );
     angel.animationState = 1;
     this.addGameObject(angel);
+    */
   }
 
   destroy() {
@@ -106,6 +109,7 @@ export class Game {
 
       channel.onDisconnect(() => {
         console.log("Disconnect user " + channel.id);
+        this.gameobjects.filter(o => o.target && o.target.id == channel.id).forEach(o => o.target = null);
         channel.room.emit(
           EVENTS_UDP.fromServer.removePlayer,
           { id: channel.id },
@@ -127,6 +131,23 @@ export class Game {
   }
 
   start() {
+
+    DB.cache.zones.forEach(z => {
+      console.log(z);
+      if(z.graveyard.x !== -1) {
+        let angel = this.objFactory.createObject(
+          GAME_UNIT_CATEGORES.STATIC,
+          GAME_UNIT_TYPES.GRAVEYARD_ANGEL,
+          z.graveyard.x,
+          z.graveyard.y
+        );
+        angel.animationState = 1;
+        this.addGameObject(angel);
+      }
+
+    })
+
+
     this.running = true;
     if (this.loop != null || this.loopSlow != null) return;
     this.loop = setInterval(

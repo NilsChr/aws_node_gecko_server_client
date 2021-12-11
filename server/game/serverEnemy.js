@@ -82,8 +82,8 @@ export default class ServerEnemy extends GameObject {
   }
 
   moveTowardsTarget() {
-    if (this.target.isGhost) {
-      this.state = STATES.FIND_TARGET;
+    if (this.target == null || this.target.isGhost) {
+      this.state = STATES.MOVE_HOME;
       return;
     }
 
