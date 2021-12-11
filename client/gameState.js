@@ -1,4 +1,5 @@
 export default {
+  SERVER_URL: null,
   channel: null,
   myId: null,
   clientPlayer: null,

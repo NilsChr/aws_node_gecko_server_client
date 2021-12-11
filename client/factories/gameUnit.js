@@ -1,3 +1,6 @@
+import axios from "axios";
+import gameState from "../gameState.js";
+
 export default class GameUnit {
   constructor(id, x, y, type, animationState) {
     this.id = id;
@@ -9,16 +12,27 @@ export default class GameUnit {
     this.dy = y;
     this.dir = 1;
     this.dead = false;
+    this.title = "";
+    this.hp = 0;
+    this.maxhp = 0;
+    let that = this;
+
+    axios
+      .get(gameState.SERVER_URL + "/getObjectTitle/" + this.id)
+      .then(function (response) {
+        that.title = response.data;
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   }
 
   update() {
     this.setDirection();
 
     this.triggeredUpdate();
-
   }
   triggeredUpdate() {}
-
 
   setDirection() {
     if (this.dx != this.x) {

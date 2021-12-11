@@ -15,12 +15,13 @@ import { GO_ANIMATION_STATES } from "../common/gameObject.js";
 import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
 import ACTION_BAR from "./GUI/actionbar/actionbar.js";
+import NAME_PLATE_RENDERER from "./systems/namePlateRenderer.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let url_prod = "http://70.34.203.138:3000";
 let url_test = "http://localhost:3000";
 let url = process.env.NODE_ENV === 'development' ? url_test : url_prod;
-
+gameState.SERVER_URL = url;
 console.log(`Connecting to ${url}`);
 
 axios.get(url + "/getZones").then((d) => {
@@ -142,7 +143,7 @@ let sketch = function (p) {
     state = state.sort((a, b) => a.y - b.y);
 
     for (let i = 0; i < state.length; i++) {
-      const { id, x, y, animationState, isGhost } = state[i];
+      const { id, x, y, animationState, isGhost, hp, maxhp } = state[i];
       let obj = gameState.gameobjects.find((p) => p.id === id);
       if (!obj) {
         //console.log('no obj', id)
@@ -160,17 +161,34 @@ let sketch = function (p) {
       obj.x = x;
       obj.y = y;
       obj.isGhost = isGhost;
+      obj.hp = hp;
+      obj.maxhp = maxhp;
 
       GAME_OBJECT_RENDERER.renderObject(p, obj);
       obj.update();
     }
-    p.pop();
 
+
+
+    p.pop();
+    
+    p.push();
+    p.translate(
+      -(player.x * cameraScale) + p.width / 2,
+      -(player.y * cameraScale) + p.height / 2
+    );
+    p.scale(cameraScale, cameraScale);
+    gameState.gameobjects.filter(o => o.title != '').forEach(o => {
+      NAME_PLATE_RENDERER.renderNameplate(p, o);
+    })
+    p.pop();
+    /*
     if (gameState.clientPlayerGameObject.isGhost) {
       //p.filter(p.GRAY);
       p.fill(0, 0, 0, 150);
       p.rect(0, 0, p.width, p.height);
     }
+    */
   };
 
   p.keyPressed = function (e) {
@@ -224,6 +242,11 @@ let sketch = function (p) {
           gameState.clientPlayerGameObject.y +
           (p.mouseY - p.height / 2) / cameraScale,
       },
+      worldToScreenPos: {
+        x: gameState.clientPlayerGameObject.x * cameraScale - ( p.width / 2),
+        y: gameState.clientPlayerGameObject.y * cameraScale - ( p.height / 2)
+        //(p.mouseX - p.width / 2) / cameraScale,
+      }
     };
     console.log(mouse);
   };

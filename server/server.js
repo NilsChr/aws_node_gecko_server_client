@@ -48,13 +48,22 @@ app.get("/getState", (req, res) => {
 
 app.get("/getZones", (req, res) => {
   try {
-    
     return res.status(200).send(DB.cache.zones);
-    //return res.json({ objs: game.gameobject })
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
+
+app.get("/getObjectTitle/:id", (req, res) => {
+  try {
+    let id = req.params.id;
+    let obj = game.gameobjects.filter(o => o.id == id)[0];
+    return res.status(200).send(obj.title);
+  } catch (error) {
+    return res.status(404).send();
+  }
+});
+
 
 app.get("/restart", (req, res) => {
   try {

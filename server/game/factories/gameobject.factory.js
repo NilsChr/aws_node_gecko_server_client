@@ -2,6 +2,7 @@ import GAME_UNIT_TYPES from "../../../common/gameUnitTypes.js";
 import ServerEnemy from "../serverEnemy.js";
 import ServerPlayer from "../serverPlayer.js";
 import ServerStatic from "../serverStatic.js";
+import FACTORY_GAMEOBJECT_TITLE from "./gameobjectTitle.factory.js";
 
 export const GAME_UNIT_CATEGORES = {
   PLAYER: 1,
@@ -19,7 +20,7 @@ export default class FACTORY_GAMEOBJECT {
   createObject(obj_category, type, x, y) {
     let obj = null;
     switch (obj_category) {
-      case GAME_UNIT_CATEGORES.PLAYER: //GAME.PLAYER:
+      case GAME_UNIT_CATEGORES.PLAYER:
         obj = this.createPlayerCategory(type, x, y);
         break;
       case GAME_UNIT_CATEGORES.ENEMY:
@@ -29,6 +30,8 @@ export default class FACTORY_GAMEOBJECT {
         obj = this.createStaticCategory(type, x, y);
         break;
     }
+    obj.title = FACTORY_GAMEOBJECT_TITLE.getTitle(obj);
+    obj.stats.reset(); // Sets hp
     return obj;
   }
 
