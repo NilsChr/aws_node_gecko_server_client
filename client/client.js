@@ -15,7 +15,10 @@ import { GO_ANIMATION_STATES } from "../common/gameObject.js";
 import axios from "axios";
 import registerClientEvents from "./transportEvents/index.js";
 import ACTION_BAR from "./GUI/actionbar/actionbar.js";
+import "./GUI/chatbar/chatbar.js";
 import NAME_PLATE_RENDERER from "./systems/namePlateRenderer.js";
+import GAME_SNACK_RENDERER from "./systems/gameSnackRenderer.js";
+import CHAT_BAR_MANAGER from "./GUI/chatbar/chatbar.js";
 const SI = new SnapshotInterpolation(GAME_CONSTANS.SERVER_FPS);
 
 let url_prod = "http://70.34.203.138:3000";
@@ -51,7 +54,10 @@ let sketch = function (p) {
     channel.onConnect((error) => {
       gameState.myId = channel.id;
       if (error) console.error(error.message);
-
+      channel.on(EVENTS_UDP.fromServer.restart, () => {
+        console.log("server restarted");
+        location.reload();
+      });
       channel.on(EVENTS_UDP.fromServer.update, (snapshot) => {
         SI.snapshot.add(snapshot);
 
@@ -174,14 +180,23 @@ let sketch = function (p) {
     );
     p.scale(cameraScale, cameraScale);
     gameState.gameobjects
-      .filter((o) => o.title != "" && (!o.isGhost || o.dead))
+      .filter((o) => o.title != "" && (!o.isGhost || o.dead))
       .forEach((o) => {
         NAME_PLATE_RENDERER.renderNameplate(p, o);
       });
+
+    GAME_SNACK_RENDERER.renderChats(p);
+
     p.pop();
   };
 
   p.keyPressed = function (e) {
+    if (e.key == "Enter") {
+      CHAT_BAR_MANAGER.toggle();
+      return;
+    }
+    if (gameState.CHATBAR_FOCUSED) return;
+
     if (e.key === "p") {
       console.log(gameState);
       console.log();
@@ -194,7 +209,7 @@ let sketch = function (p) {
     if (e.key === "?") {
       axios.get(url + "/restart").then((d) => {
         console.log(d);
-        location.reload();
+        //location.reload();
       });
     }
     if (e.key === INPUT.controls.MOVE_LEFT) INPUT.input.MOVE_LEFT = true;
@@ -207,6 +222,8 @@ let sketch = function (p) {
   };
 
   p.keyReleased = function (e) {
+    if (gameState.CHATBAR_FOCUSED) return;
+
     if (e.key === INPUT.controls.MOVE_LEFT) INPUT.input.MOVE_LEFT = false;
     if (e.key === INPUT.controls.MOVE_RIGHT) INPUT.input.MOVE_RIGHT = false;
     if (e.key === INPUT.controls.MOVE_UP) INPUT.input.MOVE_UP = false;

@@ -58,6 +58,10 @@ export class Game {
     */
   }
 
+  notifyRestart() {
+    this.io.emit(EVENTS_UDP.fromServer.restart, {}, {reliable: true});
+  }
+
   destroy() {
     clearInterval(this.loop);
     clearInterval(this.loopSlow);

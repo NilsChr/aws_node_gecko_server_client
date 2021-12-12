@@ -1,5 +1,5 @@
 const NAME_PLATE_RENDERER = {
-    namePlateWidth: 30,
+  namePlateWidth: 30,
   renderNameplate: function (p, obj) {
     p.textAlign(p.CENTER);
     p.textSize(7);
@@ -10,7 +10,12 @@ const NAME_PLATE_RENDERER = {
     p.fill(0, 0, 0);
     p.rect(-16, -23, NAME_PLATE_RENDERER.namePlateWidth, 2);
     p.fill(0, 255, 0);
-    p.rect(-16, -23, (obj.hp / obj.maxhp) * NAME_PLATE_RENDERER.namePlateWidth, 2);
+    p.rect(
+      -16,
+      -23,
+      (obj.hp / obj.maxhp) * NAME_PLATE_RENDERER.namePlateWidth,
+      2
+    );
     p.pop();
   },
 };

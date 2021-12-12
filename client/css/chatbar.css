@@ -1,0 +1,6 @@
+#chatbar {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translate(-50%,0);
+}

@@ -1,5 +1,6 @@
 export default {
   SERVER_URL: null,
+  CHATBAR_FOCUSED: false,
   channel: null,
   myId: null,
   clientPlayer: null,

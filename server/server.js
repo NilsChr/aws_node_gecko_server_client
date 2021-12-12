@@ -68,6 +68,7 @@ app.get("/getObjectTitle/:id", (req, res) => {
 app.get("/restart", (req, res) => {
   try {
     console.log('RESTART');
+    game.notifyRestart();
     game.destroy();
     game = null;
     startGame();
