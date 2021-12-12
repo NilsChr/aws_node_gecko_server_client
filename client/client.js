@@ -33,7 +33,7 @@ axios.get(url + "/getZones").then((d) => {
 });
 
 let sketch = function (p) {
-  const cameraScale = 2;
+  const cameraScale = 4;
 
   p.preload = function () {
     ASSET_MANAGER.loadAsset(p, ASSET_KEYS.UNITS, "./assets/rpg_units4.png");
